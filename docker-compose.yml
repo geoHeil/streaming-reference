@@ -1,11 +1,11 @@
 version: "3"
 services:
-  zookeeper:  # the configuration manager
-      hostname: zookeeper
-      container_name: zookeeper
-      image: 'bitnami/zookeeper:3.6.1'
-      environment:
-        - ALLOW_ANONYMOUS_LOGIN=yes
+  #zookeeper:  # the configuration manager
+  #    hostname: zookeeper
+  #    container_name: zookeeper
+  #    image: 'bitnami/zookeeper:3.6.1'
+  #    environment:
+  #      - ALLOW_ANONYMOUS_LOGIN=yes
   nifi:
     image: apache/nifi:1.11.4
     ports:
@@ -19,6 +19,7 @@ services:
     links:
       - registry
       - broker
+      - zookeeper
     volumes:
       - ./for_nifi/conf:/opt/nifi/nifi-current/conf
       #- ./for_nifi/state:/data/nifi/nifi-current/state
@@ -27,15 +28,15 @@ services:
       #- ./for_nifi/content:/opt/nifi/nifi-current/content_repository
       #- ./for_nifi/provenance:/opt/nifi/nifi-current/provenance_repository
       #- ./for_nifi/logs:/opt/nifi/nifi-current/logs
-  # zookeeper: #https://github.com/confluentinc/cp-all-in-one/blob/5.5.0-post/cp-all-in-one/docker-compose.yml#L5
-  #   image: confluentinc/cp-zookeeper:5.5.0
-  #   hostname: zookeeper
-  #   container_name: zookeeper
-  #   ports:
-  #     - "2181:2181"
-  #   environment:
-  #     ZOOKEEPER_CLIENT_PORT: 2181
-  #     ZOOKEEPER_TICK_TIME: 2000
+  zookeeper: #https://github.com/confluentinc/cp-all-in-one/blob/5.5.0-post/cp-all-in-one/docker-compose.yml#L5
+    image: confluentinc/cp-zookeeper:5.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
   # schemaregistry:
   #   image: confluentinc/cp-schema-registry:5.5.0
   #   hostname: schema-registry
@@ -63,7 +64,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      #KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0

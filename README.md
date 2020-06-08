@@ -33,3 +33,21 @@ docker-compuse up
 
 ### initial kafka example
 - https://towardsdatascience.com/big-data-managing-the-flow-of-data-with-apache-nifi-and-apache-kafka-af674cd8f926
+
+- follow along and set-up NiFi
+- then prepare kafka
+
+```bash
+docker-compose exec broker \
+    kafka-topics --create --topic test --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
+
+docker-compose exec broker  \
+    kafka-topics --describe --topic test --zookeeper zookeeper:2181
+
+docker-compose exec broker  \
+    kafka-console-consumer --bootstrap-server localhost:29092 --topic test --from-beginning --max-messages 30
+```
+
+- let the messages flow
+
+> WARNING: need to fix connectivity with Kafka - currently, this is a timeout.
