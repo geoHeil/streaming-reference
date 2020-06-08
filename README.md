@@ -30,3 +30,6 @@ docker-compuse up
     - http://registry:18080
 - create a processor & group
 - version control
+
+### initial kafka example
+- https://towardsdatascience.com/big-data-managing-the-flow-of-data-with-apache-nifi-and-apache-kafka-af674cd8f926
