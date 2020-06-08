@@ -21,3 +21,12 @@ docker-compuse up
 - broker
     - kafka: localhost:29092 and localhost:9092
     - pulsar
+
+## steps
+
+### nifi stuff
+- in registry create a test bucket
+- in NiFi connect the registry in the controller settings
+    - http://registry:18080
+- create a processor & group
+- version control

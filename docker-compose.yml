@@ -1,5 +1,31 @@
 version: "3"
 services:
+  zookeeper:  # the configuration manager
+      hostname: zookeeper
+      container_name: zookeeper
+      image: 'bitnami/zookeeper:3.6.1'
+      environment:
+        - ALLOW_ANONYMOUS_LOGIN=yes
+  nifi:
+    image: apache/nifi:1.11.4
+    ports:
+      - 8080:8080 # Unsecured HTTP Web Port
+    environment:
+      - NIFI_WEB_HTTP_PORT=8080
+      - NIFI_CLUSTER_IS_NODE=true
+      - NIFI_CLUSTER_NODE_PROTOCOL_PORT=8082
+      - NIFI_ZK_CONNECT_STRING=zookeeper:2181
+      - NIFI_ELECTION_MAX_WAIT=1 min
+    links:
+      - registry
+    volumes:
+      - ./for_nifi/state:/opt/nifi/nifi-current/state
+      # - ./for_nifi/conf:/opt/nifi/nifi-current/conf
+      - ./for_nifi/db:/opt/nifi/nifi-current/database_repository
+      - ./for_nifi/flowfile:/opt/nifi/nifi-current/flowfile_repository
+      - ./for_nifi/content:/opt/nifi/nifi-current/content_repository
+      - ./for_nifi/provenance:/opt/nifi/nifi-current/provenance_repository
+      - ./for_nifi/logs:/opt/nifi/nifi-current/logs
   # zookeeper: #https://github.com/confluentinc/cp-all-in-one/blob/5.5.0-post/cp-all-in-one/docker-compose.yml#L5
   #   image: confluentinc/cp-zookeeper:5.5.0
   #   hostname: zookeeper
@@ -39,28 +65,26 @@ services:
   #     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
   #     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
   #     KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-  # nifi:
-  #   hostname: demo.nifi
-  #   image: apache/nifi:1.11.4
-  #   container_name: nifi
-  #   ports:
-  #     - 8080:8080
-  #     - 443:8443
-  #   links:
-  #     - registry
-  #   volumes:
-  #     - ./for_nifi/tmp/nifi:/opt/nifi_in
-  #     #- ./for_nifi/nifi-persisted/:/opt/nifi/
-  #     - ./for_registry/demo.nifi:/opt/demo.nifi:ro
   registry:
     hostname: registry
-    image: apache/nifi-registry:0.6.0
+    #image: apache/nifi-registry:0.6.0
+    # https://github.com/michalklempa/docker-nifi-registry/blob/1cc1970b480c9568d1b5691359cac070ac51b257/docker-compose.github.yml
+    image: michalklempa/nifi-registry:0.6.0-default
     container_name: registry
+    environment:
+      #DEBUG: 1
+      FLOW_PROVIDER: git
+      #GIT_REMOTE_URL: git@github.com:michalklempa/docker-nifi-registry-example-flow.git
+      #GIT_CHECKOUT_BRANCH: example
+      FLOW_PROVIDER_GIT_FLOW_STORAGE_DIRECTORY: /opt/nifi-registry/flow-storage-git
+      #FLOW_PROVIDER_GIT_REMOTE_TO_PUSH: origin
+      #GIT_CONFIG_USER_NAME: 'Michal Klempa'
+      #GIT_CONFIG_USER_EMAIL: michal.klempa@gmail.com
     volumes:
       - ./for_registry/registry/:/opt/registry:ro
       - ./extensions:/opt/nifi/nifi-current/extensions
-      - ./flow_storage:/flow_storage
-      - ./conf_nifi-registry/providers.xml:/opt/nifi-registry/nifi-registry-0.6.0/conf/providers.xml
+      - ./flow_storage:/opt/nifi-registry/flow-storage-git
+      #- ./conf_nifi-registry/providers.xml:/opt/nifi-registry/nifi-registry-0.6.0/conf/providers.xml
     ports:
       - 18080:18080
   # elasticsearch:
