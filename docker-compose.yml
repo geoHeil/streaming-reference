@@ -1,11 +1,5 @@
 version: "3"
 services:
-  #zookeeper:  # the configuration manager
-  #    hostname: zookeeper
-  #    container_name: zookeeper
-  #    image: 'bitnami/zookeeper:3.6.1'
-  #    environment:
-  #      - ALLOW_ANONYMOUS_LOGIN=yes
   nifi:
     image: apache/nifi:1.11.4
     ports:
@@ -20,6 +14,7 @@ services:
       - registry
       - broker
       - zookeeper
+      - elasticsearch
     volumes:
       - ./for_nifi/conf:/opt/nifi/nifi-current/conf
       #- ./for_nifi/state:/data/nifi/nifi-current/state
@@ -37,18 +32,18 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-  # schemaregistry:
-  #   image: confluentinc/cp-schema-registry:5.5.0
-  #   hostname: schema-registry
-  #   container_name: schema-registry
-  #   depends_on:
-  #     - zookeeper
-  #     - broker
-  #   ports:
-  #     - "8081:8081"
-  #   environment:
-  #     SCHEMA_REGISTRY_HOST_NAME: schema-registry
-  #     SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
+  schemaregistry:
+    image: confluentinc/cp-schema-registry:5.5.0
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - zookeeper
+      - broker
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
   broker:
     image: confluentinc/cp-kafka:5.5.0
     hostname: broker
@@ -90,32 +85,34 @@ services:
       #- ./conf_nifi-registry/providers.xml:/opt/nifi-registry/nifi-registry-0.6.0/conf/providers.xml
     ports:
       - 18080:18080
-  # elasticsearch:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.7.1
-  #   container_name: elasticsearch
-  #   hostname: elasticsearch
-  #   environment:
-  #     - "discovery.type=single-node"
-  #     - ELASTICSEARCH_USERNAME=admin
-  #     - ELASTICSEARCH_PASSWORD=admin
-  #     - xpack.security.enabled=false
-  #   ports:
-  #     - 9200:9200
-  #     - 9300:9300
-  # kibana:
-  #   image: docker.elastic.co/kibana/kibana:7.7.1
-  #   container_name: kibana
-  #   environment:
-  #     - ELASTICSEARCH_URL="http://elasticsearch:9200"
-  #     - ELASTICSEARCH_USERNAME=admin
-  #     - ELASTICSEARCH_PASSWORD=admin
-  #     - xpack.security.enabled=false
-  #   ports:
-  #     - 5601:5601
-  #   links:
-  #     - elasticsearch
-  #   #volumes:
-  #   #  - ./for_kibana/:/usr/share/kibana/config/kibana.yml
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.7.1
+    container_name: elasticsearch
+    hostname: elasticsearch
+    environment:
+      - "discovery.type=single-node"
+      - ELASTICSEARCH_USERNAME=admin
+      - ELASTICSEARCH_PASSWORD=admin
+      - xpack.security.enabled=false
+    ports:
+      - 9200:9200
+      - 9300:9300
+    links: 
+      - broker
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.7.1
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_URL="http://elasticsearch:9200"
+      - ELASTICSEARCH_USERNAME=admin
+      - ELASTICSEARCH_PASSWORD=admin
+      - xpack.security.enabled=false
+    ports:
+      - 5601:5601
+    links:
+      - elasticsearch
+    #volumes:
+    #  - ./for_kibana/:/usr/share/kibana/config/kibana.yml
     
   # jobmanager:
   #   image: flink:1.10.1-scala_2.12

@@ -51,3 +51,12 @@ docker-compose exec broker  \
 - let the messages flow
 
 > WARNING: need to fix connectivity with Kafka - currently, this is a timeout.
+
+
+### elastic
+
+- https://github.com/tjaensch/nifi_docker_elasticsearch_demo
+- https://linkbynet.github.io/elasticsearch/tuning/2017/02/07/Bitcoin-ELK-NiFi.html
+
+> fails so far with:
+ Failed to insert into Elasticsearch due to Invalid Expression: bitstamp-${timestamp:multiply(1000):format(“yyyy-MM-dd”)} due to Unexpected token '“yyyy-MM-dd”' at line 1, column 34. Query: ${timestamp:multiply(1000):format(“yyyy-MM-dd”)}, transferring to failure: org.apache.nifi.attribute.expression.language.exception.AttributeExpressionLanguageException: Invalid Expression: bitstamp-${timestamp:multiply(1000):format(“yyyy-MM-dd”)} due to Unexpected token '“yyyy-MM-dd”' at line 1, column 34. Query: ${timestamp:multiply(1000):format(“yyyy-MM-dd”)}
