@@ -79,8 +79,8 @@ services:
       #GIT_CONFIG_USER_NAME: 'Michal Klempa'
       #GIT_CONFIG_USER_EMAIL: michal.klempa@gmail.com
     volumes:
-      - ./for_registry/registry/:/opt/registry:ro
-      - ./extensions:/opt/nifi/nifi-current/extensions
+      #- ./for_registry/registry/:/opt/registry:ro
+      #- ./extensions:/opt/nifi/nifi-current/extensions
       - ./flow_storage:/opt/nifi-registry/flow-storage-git
       #- ./conf_nifi-registry/providers.xml:/opt/nifi-registry/nifi-registry-0.6.0/conf/providers.xml
     ports:
