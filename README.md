@@ -53,6 +53,14 @@ docker-compose exec broker  \
 > WARNING: need to fix connectivity with Kafka - currently, this is a timeout.
 
 
+### minifi
+
+TODO
+
+### kafka connect
+
+TODO
+
 ### elastic
 
 - https://github.com/tjaensch/nifi_docker_elasticsearch_demo
@@ -60,3 +68,21 @@ docker-compose exec broker  \
 
 > fails so far with:
  Failed to insert into Elasticsearch due to Invalid Expression: bitstamp-${timestamp:multiply(1000):format(“yyyy-MM-dd”)} due to Unexpected token '“yyyy-MM-dd”' at line 1, column 34. Query: ${timestamp:multiply(1000):format(“yyyy-MM-dd”)}, transferring to failure: org.apache.nifi.attribute.expression.language.exception.AttributeExpressionLanguageException: Invalid Expression: bitstamp-${timestamp:multiply(1000):format(“yyyy-MM-dd”)} due to Unexpected token '“yyyy-MM-dd”' at line 1, column 34. Query: ${timestamp:multiply(1000):format(“yyyy-MM-dd”)}
+
+### kibana
+
+
+
+### pulsar
+
+TODO
+
+
+### flink job
+
+
+## other good examples
+
+Or simply other ideas for nice data to stream in this pipeline:
+
+- https://github.com/asdaraujo/edge2ai-workshop
