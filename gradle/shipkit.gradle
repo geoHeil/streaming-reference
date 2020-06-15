@@ -16,8 +16,7 @@ allprojects {
             pkg {
                 repo = 'playground'
                 user = 'geoheil'
-                userOrg = 'streaming-reference'
-                name = 'maven'
+                name = 'streaming-reference'
                 licenses = ['Apache 2.0']
                 labels = ['apache flink', 'streaming', 'shipkit']
             }
