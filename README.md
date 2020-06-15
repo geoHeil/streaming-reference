@@ -1,4 +1,6 @@
-# streaming referenc example
+[master](https://travis-ci.com/geoHeil/streaming-reference.svg?branch=master)
+
+# streaming reference example
 
 Streaming reference example with Avro, SchemaRegistry, NiFi, NiFi registry, Kafka/Pulsar, Elastic & Kibana and Flink.
 
