@@ -1,0 +1,26 @@
+shipkit {
+    gitHub.repository = "geoHeil/streaming-reference"
+
+    gitHub.readOnlyAuthToken = "ab40510db912ed3938a0d40de3e6fc14573ed3f4"
+
+    gitHub.writeAuthToken = System.getenv("GH_WRITE_TOKEN")
+}
+
+allprojects {
+    plugins.withId("org.shipkit.bintray") {
+
+        //Bintray configuration is handled by JFrog Bintray Gradle Plugin
+        //For reference see the official documentation: https://github.com/bintray/gradle-bintray-plugin
+        bintray {
+            key = System.getenv("BINTRAY_API_KEY")
+            pkg {
+                repo = 'playground'
+                user = 'geoheil'
+                userOrg = 'streaming-reference'
+                name = 'maven'
+                licenses = ['Apache 2.0']
+                labels = ['apache flink', 'streaming', 'shipkit']
+            }
+        }
+    }
+}
