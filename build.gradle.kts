@@ -1,6 +1,7 @@
 import org.gradle.internal.impldep.org.joda.time.YearMonth.YEAR
 
 plugins {
+    idea
     id("org.shipkit.java") version "2.3.1"
     id("com.diffplug.gradle.spotless") version "4.3.0"
     id("com.github.maiflai.scalatest") version "0.26" apply false
