@@ -1,4 +1,4 @@
-[master](https://travis-ci.com/geoHeil/streaming-reference.svg?branch=master)
+[![Build Status](https://travis-ci.com/geoHeil/streaming-reference.svg?branch=master)](https://travis-ci.com/geoHeil/streaming-reference)
 
 # streaming reference example
 
