@@ -1,0 +1,13 @@
+plugins {
+    id 'com.zlad.gradle.avrohugger' version '0.4.4'
+}
+
+description = "avro models generated"
+avrohugger {
+    sourceDirectories = files("src/main/avro")
+    destinationDirectory = file("src/generated/scala")
+    typeMapping {
+        protocolType = ScalaADT
+    }
+    sourceFormat = Standard
+}

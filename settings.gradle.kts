@@ -12,3 +12,4 @@ rootProject.name = "streaming-reference"
 include("common")
 include("usecases")
 include("usecases:playground")
+include("common:models")

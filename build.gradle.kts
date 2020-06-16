@@ -7,6 +7,7 @@ plugins {
     id("com.diffplug.gradle.spotless") version "4.3.0"
     id("com.github.maiflai.scalatest") version "0.26" apply false
     id("com.github.johnrengelman.shadow") version "5.2.0" apply false
+    //id ("com.zlad.gradle.avrohugger") version "0.4.4" apply false
 }
 
 allprojects {
@@ -21,7 +22,10 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
     apply(plugin = "java-library")
     apply(plugin = "maven-publish")
     apply(plugin = "scala")
-    apply(plugin = "com.github.maiflai.scalatest")
+    // apply no automatic formatting validation for auto generated avro classes
+    if (subprojects.filter { it.name != "commmon:models" }.isNotEmpty()) {
+        apply(plugin = "com.github.maiflai.scalatest")
+    }
     apply(plugin = "com.diffplug.gradle.spotless")
     apply(plugin = "com.github.johnrengelman.shadow")
 
@@ -47,6 +51,10 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
         scala {
             scalafmt()
             licenseHeader("// Copyright (C) $YEAR geoHeil", "package ")
+//            target{
+//                exclude("**/*.md")
+//                excludeBuildDirectories()
+//            }
         }
         kotlin {
             ktfmt()
@@ -67,7 +75,7 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
 //    }
     val shadowJar: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar by tasks
     shadowJar.apply {
-       // duplicatesStrategy(DuplicatesStrategy.FAIL)
+        // duplicatesStrategy(DuplicatesStrategy.FAIL)
 //        mergeServiceFiles()
 //        manifest.attributes.apply {
 //            put("Main-Class", serverClassName)
@@ -170,4 +178,4 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
 //            exclude(module = "groovy-all")
 //        }
 //    }
-    }
+}
