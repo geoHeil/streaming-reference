@@ -3,10 +3,6 @@
 
 language: java
 
-jdk:
-  - openjdk8
-  - openjdk11
-
 #Skipping install step to avoid having Travis run arbitrary './gradlew assemble' task
 # https://docs.travis-ci.com/user/customizing-the-build/#Skipping-the-Installation-Step
 install:
@@ -20,15 +16,17 @@ branches:
 stages:
   - build
   - release
+
 jobs:
   include:
     - stage: build
       jdk: openjdk8
       script: ./gradlew build -s
     - stage: build
-        jdk: openjdk11
-        script: ./gradlew build -s
+    - stage: build
+      jdk: openjdk11
+      script: ./gradlew build -s
     # Build and perform release (if needed)
     - stage: release
-        jdk: openjdk8
-        script: ./gradlew build -s && ./gradlew ciPerformRelease
+      jdk: openjdk8
+      script: ./gradlew build -s && ./gradlew ciPerformRelease
