@@ -2,7 +2,7 @@ import org.gradle.internal.impldep.org.joda.time.YearMonth.YEAR
 
 plugins {
     idea
-//    `maven-publish`
+    `maven-publish`
     id("org.shipkit.java") version "2.3.1"
     id("com.diffplug.gradle.spotless") version "4.3.0"
     id("com.github.maiflai.scalatest") version "0.26" apply false
@@ -14,50 +14,12 @@ allprojects {
     repositories {
         jcenter()
     }
-
-//    publishing {
-//        publications {
-//            create<MavenPublication>("mavenJava") {
-//                artifact shadowJar
-//                artifact sourceJar
-//                artifact scaladocJar
-//                pom {
-//                    name.set("My Library")
-//                    description.set("A concise description of my library")
-//                    url.set("http://www.example.com/library")
-//                    properties.set(mapOf(
-//                            "myProp" to "value",
-//                            "prop.with.dots" to "anotherValue"
-//                    ))
-//                    licenses {
-//                        license {
-//                            name.set("The Apache License, Version 2.0")
-//                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-//                        }
-//                    }
-//                    developers {
-//                        developer {
-//                            id.set("johnd")
-//                            name.set("John Doe")
-//                            email.set("john.doe@example.com")
-//                        }
-//                    }
-//                    scm {
-//                        connection.set("scm:git:git://example.com/my-library.git")
-//                        developerConnection.set("scm:git:ssh://example.com/my-library.git")
-//                        url.set("http://example.com/my-library/")
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-
 }
 
 configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-library" }*/) {
     apply(plugin = "java")
     apply(plugin = "java-library")
+    apply(plugin = "maven-publish")
     apply(plugin = "scala")
     apply(plugin = "com.github.maiflai.scalatest")
     apply(plugin = "com.diffplug.gradle.spotless")
@@ -98,20 +60,103 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
 //        }
 //    }
     //archivesBaseName.set("${project.name}_${Libraries.ScalaVersions.scalaVBase}")
+//    val shadowJar: ShadowJar by tasks
+//    shadowJar.apply {
+//        baseName = artifactID
+//        classifier = null
+//    }
     val shadowJar: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar by tasks
     shadowJar.apply {
-        mergeServiceFiles()
+       // duplicatesStrategy(DuplicatesStrategy.FAIL)
+//        mergeServiceFiles()
 //        manifest.attributes.apply {
 //            put("Main-Class", serverClassName)
 //        }
+//        baseName = "${project.name}_${Libraries.ScalaVersions.scalaVBase}-all"
+//        classifier = null
         archiveBaseName.set("${project.name}_${Libraries.ScalaVersions.scalaVBase}-all")
-//        baseName = project.name + "-fat"
     }
     tasks {
         build {
             dependsOn(shadowJar)
         }
     }
+//    fun MavenPom.addDependencies() = withXml {
+//        asNode().appendNode("dependencies").let { depNode ->
+//            configurations.compile.allDependencies.forEach {
+//                depNode.appendNode("dependency").apply {
+//                    appendNode("groupId", it.group)
+//                    appendNode("artifactId", it.name)
+//                    appendNode("version", it.version)
+//                }
+//            }
+//        }
+//    }
+// https://kotlinexpertise.com/kotlinlibrarydistibution/
+//    val publicationName = "tlslib"
+//    publishing {
+//        publications.invoke {
+//            publicationName(MavenPublication::class) {
+//                artifactId = "${project.name}_${Libraries.ScalaVersions.scalaVBase}-all"
+//                artifact(shadowJar)
+//                pom.addDependencies()
+//            }
+//        }
+//    }
+
+
+//    publishing {
+//        publications.invoke {
+//            publicationName(MavenPublication::class) {
+//                artifactId = project.name
+//                artifact(shadowJar)
+//                pom.addDependencies()
+//            }
+//        }
+//    }
+
+//    tasks {
+//        withType(GradleBuild::class.java) {
+//            dependsOn(shadowJar)
+//        }
+//    }
+
+//        publishing {
+//        publications {
+//            create<MavenPublication>("mavenJava") {
+//                artifact(shadowJar)
+////                artifact(sourceJar)
+////                artifact(scaladocJar)
+//                pom {
+//                    name.set("My Library")
+//                    description.set("A concise description of my library")
+//                    url.set("http://www.example.com/library")
+//                    properties.set(mapOf(
+//                            "myProp" to "value",
+//                            "prop.with.dots" to "anotherValue"
+//                    ))
+//                    licenses {
+//                        license {
+//                            name.set("The Apache License, Version 2.0")
+//                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+//                        }
+//                    }
+//                    developers {
+//                        developer {
+//                            id.set("johnd")
+//                            name.set("John Doe")
+//                            email.set("john.doe@example.com")
+//                        }
+//                    }
+//                    scm {
+//                        connection.set("scm:git:git://example.com/my-library.git")
+//                        developerConnection.set("scm:git:ssh://example.com/my-library.git")
+//                        url.set("http://example.com/my-library/")
+//                    }
+//                }
+//            }
+//        }
+//    }
 
 //    tasks.withType(ScalaCompile) {
 //        configure(scalaCompileOptions.forkOptions) {
