@@ -2,6 +2,7 @@ import org.gradle.internal.impldep.org.joda.time.YearMonth.YEAR
 
 plugins {
     idea
+//    `maven-publish`
     id("org.shipkit.java") version "2.3.1"
     id("com.diffplug.gradle.spotless") version "4.3.0"
     id("com.github.maiflai.scalatest") version "0.26" apply false
@@ -10,11 +11,48 @@ plugins {
 
 allprojects {
     group = "com.github.geoheil.streamingreference"
-    version = "0.1"
-
     repositories {
         jcenter()
     }
+
+//    publishing {
+//        publications {
+//            create<MavenPublication>("mavenJava") {
+//                artifact shadowJar
+//                artifact sourceJar
+//                artifact scaladocJar
+//                pom {
+//                    name.set("My Library")
+//                    description.set("A concise description of my library")
+//                    url.set("http://www.example.com/library")
+//                    properties.set(mapOf(
+//                            "myProp" to "value",
+//                            "prop.with.dots" to "anotherValue"
+//                    ))
+//                    licenses {
+//                        license {
+//                            name.set("The Apache License, Version 2.0")
+//                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+//                        }
+//                    }
+//                    developers {
+//                        developer {
+//                            id.set("johnd")
+//                            name.set("John Doe")
+//                            email.set("john.doe@example.com")
+//                        }
+//                    }
+//                    scm {
+//                        connection.set("scm:git:git://example.com/my-library.git")
+//                        developerConnection.set("scm:git:ssh://example.com/my-library.git")
+//                        url.set("http://example.com/my-library/")
+//                    }
+//                }
+//            }
+//        }
+//    }
+
+
 }
 
 configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-library" }*/) {
@@ -24,6 +62,9 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
     apply(plugin = "com.github.maiflai.scalatest")
     apply(plugin = "com.diffplug.gradle.spotless")
     apply(plugin = "com.github.johnrengelman.shadow")
+
+    // TODO cross build for multiple scala/flink/spark versions
+    base.archivesBaseName = "${project.name}_${Libraries.ScalaVersions.scalaVBase}"
 
     dependencies {
         // Use Scala 2.13 in our library project
@@ -51,13 +92,19 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
         }
     }
 
+//    java {
+//        jar{
+//            project.arch archivesBaseName = "asdf"
+//        }
+//    }
+    //archivesBaseName.set("${project.name}_${Libraries.ScalaVersions.scalaVBase}")
     val shadowJar: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar by tasks
     shadowJar.apply {
         mergeServiceFiles()
 //        manifest.attributes.apply {
 //            put("Main-Class", serverClassName)
 //        }
-//         archiveBaseName.set("shadow")
+        archiveBaseName.set("${project.name}_${Libraries.ScalaVersions.scalaVBase}-all")
 //        baseName = project.name + "-fat"
     }
     tasks {
@@ -65,6 +112,13 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
             dependsOn(shadowJar)
         }
     }
+
+//    tasks.withType(ScalaCompile) {
+//        configure(scalaCompileOptions.forkOptions) {
+//            memoryMaximumSize = '1g'
+//            jvmArgs = ['-XX:MaxPermSize=512m']
+//        }
+//    }
 //
 //    dependencies {
 //        "testCompile"("org.spockframework:spock-core:1.0-groovy-2.4") {
