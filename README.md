@@ -64,11 +64,37 @@ docker-compose exec broker  \
 
 ### NiFi bitcoins example
 
+We want to create the following workflow:
+
+- read from REST API
+- push to Elastic
+- visualize
+
+for 3x i.e. sometiems using Avro schemata, sometimes not, sometimes cleanig up data types in NiFi or directly in Elasticsearch.
+
+The overall picture looks like this:
+
+![workflow](img/bitcoin_nifi_workflows.png "")
+
+let's get started.
+
 1. Connect to registry
 2. import processor groups from the registry
 3. examine workflows & click play for all (of the bitconi related stuff)
 
-JOLT mode is chain. For a spec of:
+**setup of controller services**
+
+Controller services might be disabled after importing the processor group from the registry. Enable them!
+
+> For the HTTPS trust store service set the default password to: `changeit` in case NiFi complains about a missing or unreadable password.
+
+<details>
+<summary>JOLT example</summary>
+<br>
+JOLT mode is chain.
+<br><br>
+
+For a spec of:
 
 ```
 [{
@@ -107,6 +133,27 @@ and input of:
 ```
 
 the data is cleaned up and transformed nicely.
+</details>
+
+### Elastic stuff
+
+Now go to kibana and create an indexing pattern for both document types.
+
+#### Avro
+
+```
+GET _cat/indices
+GET fixed-bitstamp*/_search
+GET bitstamp*/_search
+GET avro-bitstamp*/_search
+
+GET fixed-bitstamp*/_mapping
+GET bitstamp*/_mapping
+GET avro-bitstamp*/_mapping
+```
+
+
+##### types fixup
 
 If not cleaned up below can be used to fix the data types directly in Elastic:
 
@@ -141,8 +188,6 @@ PUT _template/bits_template
   }
   }
 ```
-
-Now go to kibana and create an indexing pattern for both document types.
 
 #### Cleaning up in Elastic
 
