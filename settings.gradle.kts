@@ -12,4 +12,5 @@ rootProject.name = "streaming-reference"
 include("common")
 include("usecases")
 include("usecases:playground")
+include("usecases:streamingWordcount")
 include("common:models")

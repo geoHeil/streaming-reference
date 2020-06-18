@@ -1,8 +1,10 @@
+import com.github.geoheil.streamingreference.Libraries
 import org.gradle.internal.impldep.org.joda.time.YearMonth.YEAR
 
 plugins {
     idea
     `maven-publish`
+    `java-library`
     id("org.shipkit.java") version "2.3.1"
     id("com.diffplug.gradle.spotless") version "4.3.0"
     id("com.github.maiflai.scalatest") version "0.26" apply false
@@ -11,55 +13,92 @@ plugins {
 }
 
 allprojects {
+    apply(plugin = "java-library")
+
     group = "com.github.geoheil.streamingreference"
     repositories {
         jcenter()
     }
+
+    java {
+        sourceCompatibility = Libraries.SharedVersions.javaVersion
+        targetCompatibility = Libraries.SharedVersions.javaVersion
+    }
+
+//    configurations {
+//        testCompile{
+//            // TODO https://stackoverflow.com/questions/62452133/gradle-kotlin-dsl-extendsfrom
+//            extendsFrom(compileOnly)
+//        }
+////        testCompile.extendsFrom compileOnly
+//    }
 }
 
 configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-library" }*/) {
     apply(plugin = "java")
-    apply(plugin = "java-library")
     apply(plugin = "maven-publish")
     apply(plugin = "scala")
+    apply(plugin = "checkstyle")
     // apply no automatic formatting validation for auto generated avro classes
     if (subprojects.filter { it.name != "commmon:models" }.isNotEmpty()) {
-        apply(plugin = "com.github.maiflai.scalatest")
-    }
-    apply(plugin = "com.diffplug.gradle.spotless")
-    apply(plugin = "com.github.johnrengelman.shadow")
-
-    // TODO cross build for multiple scala/flink/spark versions
-    base.archivesBaseName = "${project.name}_${Libraries.ScalaVersions.scalaVBase}"
-
-    dependencies {
-        // Use Scala 2.13 in our library project
-        val implementation by configurations
-        val testImplementation by configurations
-        val testRuntimeOnly by configurations
-        implementation("org.scala-lang:scala-library:2.13.2")
-
-        // Use Scalatest for testing our library
-//        testImplementation("junit:junit:null")
-        testImplementation(TestLibraries.scalaTest)
-//        testImplementation("org.scalatestplus:junit-4-12_2.13:3.1.2.0")
-
-        // Need scala-xml at test runtime
-        //testRuntimeOnly("org.scala-lang.modules:scala-xml_2.13:1.2.0")
-    }
-    spotless {
-        scala {
-            scalafmt()
-            licenseHeader("// Copyright (C) $YEAR geoHeil", "package ")
+        apply(plugin = "com.diffplug.gradle.spotless")
+        spotless {
+            scala {
+                scalafmt()
+                licenseHeader("// Copyright (C) $YEAR geoHeil", "package ")
 //            target{
 //                exclude("**/*.md")
 //                excludeBuildDirectories()
 //            }
+            }
+            kotlin {
+                ktfmt()
+                licenseHeader("// Copyright (C) $YEAR geoHeil", "package ")
+            }
         }
-        kotlin {
-            ktfmt()
-            licenseHeader("// Copyright (C) $YEAR geoHeil", "package ")
-        }
+    }
+    apply(plugin = "com.github.maiflai.scalatest")
+    apply(plugin = "com.github.johnrengelman.shadow")
+
+    // TODO cross build for multiple scala/flink/spark versions
+    base.archivesBaseName = "${project.name}_${Libraries.SharedVersions.scalaVBase}"
+
+    // NOTE: We cannot use "compileOnly" or "shadow" configurations since then we could not run code
+    // in the IDE or with "gradle run". We also cannot exclude transitive dependencies from the
+    // shadowJar yet (see https://github.com/johnrengelman/shadow/issues/159).
+    // -> Explicitly define the // libraries we want to be included in the "flinkShadowJar" configuration!
+
+//    configurations {
+//        "flinkShadowJar"{
+    // dependencies which go into the shadowJar
+    // provided by Flink
+//            exclude(group = "org.apache.flink", module = "force-shading")
+    //flinkShadowJar.exclude group: "org.apache.flink", module: "force-shading"
+//            flinkShadowJar.exclude group: "com.google.code.findbugs", module: "jsr305"
+//            flinkShadowJar.exclude group: "org.slf4j"
+//            flinkShadowJar.exclude group: "log4j"
+
+    // already provided dependencies from serializer frameworks
+//            flinkShadowJar.exclude group: "com.esotericsoftware.kryo", module: "kryo"
+//            flinkShadowJar.exclude group: "javax.servlet", module: "servlet-api"
+//            flinkShadowJar.exclude group: "org.apache.httpcomponents", module: "httpclient"
+//        }
+//    }
+
+    dependencies {
+        val implementation by configurations
+//        val testImplementation by configurations
+//        val testRuntimeOnly by configurations
+        implementation(Libraries.scalaLibrary)
+//        implementation("org.scala-lang:scala-library:2.13.2")
+
+        // Use Scalatest for testing our library
+//        testImplementation("junit:junit:null")
+//        testImplementation(TestLibraries.scalaTest)
+//        testImplementation("org.scalatestplus:junit-4-12_2.13:3.1.2.0")
+
+        // Need scala-xml at test runtime
+        //testRuntimeOnly("org.scala-lang.modules:scala-xml_2.13:1.2.0")
     }
 
 //    java {
@@ -82,7 +121,7 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
 //        }
 //        baseName = "${project.name}_${Libraries.ScalaVersions.scalaVBase}-all"
 //        classifier = null
-        archiveBaseName.set("${project.name}_${Libraries.ScalaVersions.scalaVBase}-all")
+        archiveBaseName.set("${project.name}_${Libraries.SharedVersions.scalaVBase}")
     }
     tasks {
         build {
