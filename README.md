@@ -78,13 +78,16 @@ JOLT mode is chain. For a spec of:
   	"last" : "last",
   	"volume" : "volume"
  }
+ 
 },
 {
   "operation": "modify-overwrite-beta",
   "spec": {
+    "last": "=toDouble",
+    "volume": "=toDouble",
    "timestamp": "${timestamp:append('000'):format('yyyy-MM-dd HH:mm:ss.SSS')}"
   }
-}
+}]
 ```
 
 and input of:
@@ -140,6 +143,13 @@ PUT _template/bits_template
 ```
 
 Now go to kibana and create an indexing pattern for both document types.
+
+#### Cleaning up in Elastic
+
+```
+DELETE bitstamp*
+DELETE fixed-bitstamp-*
+```
 
 ### minifi
 
