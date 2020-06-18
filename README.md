@@ -62,6 +62,85 @@ docker-compose exec broker  \
 
 - let the messages flow
 
+### NiFi bitcoins example
+
+1. Connect to registry
+2. import processor groups from the registry
+3. examine workflows & click play for all (of the bitconi related stuff)
+
+JOLT mode is chain. For a spec of:
+
+```
+[{
+  "operation": "shift",
+  "spec": {
+    "timestamp" : "timestamp",
+  	"last" : "last",
+  	"volume" : "volume"
+ }
+},
+{
+  "operation": "modify-overwrite-beta",
+  "spec": {
+   "timestamp": "${timestamp:append('000'):format('yyyy-MM-dd HH:mm:ss.SSS')}"
+  }
+}
+```
+
+and input of:
+
+```
+{
+	"high": "9566.53",
+	"last": "9437.12",
+	"timestamp": "1592464384",
+	"bid": "9430.99",
+	"vwap": "9414.02",
+	"volume": "5071.24329638",
+	"low": "9230.32",
+	"ask": "9437.14",
+	"open": "9459.82"
+}
+```
+
+the data is cleaned up and transformed nicely.
+
+If not cleaned up below can be used to fix the data types directly in Elastic:
+
+```
+PUT _template/bits_template
+{
+  "index_patterns": "bits*",
+  "order": 1,
+  "mappings": {
+     "properties": {
+      "last": {
+        "type": "float"
+      },
+      "reindexBatch": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "timestamp": {
+        "type": "date",
+        "format":
+          "epoch_second"
+      },
+      "volume": {
+        "type": "float"
+      }
+    }
+  }
+  }
+```
+
+Now go to kibana and create an indexing pattern for both document types.
+
 ### minifi
 
 TODO
