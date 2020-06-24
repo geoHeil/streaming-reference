@@ -25,13 +25,17 @@ allprojects {
         targetCompatibility = Libraries.SharedVersions.javaVersion
     }
 
-//    configurations {
-//        testCompile{
-//            // TODO https://stackoverflow.com/questions/62452133/gradle-kotlin-dsl-extendsfrom
-//            extendsFrom(compileOnly)
-//        }
-////        testCompile.extendsFrom compileOnly
-//    }
+    // https://github.com/apache/flink/pull/5900
+    // NOTE: We cannot use "compileOnly" or "shadow" configurations since then we could not run code
+    // in the IDE or with "gradle run". We also cannot exclude transitive dependencies from the
+    // shadowJar yet (see https://github.com/johnrengelman/shadow/issues/159).
+    // TODO for now run task still needs to be fixed!
+
+    configurations {
+        testCompile {
+            extendsFrom(configurations.compileOnly.get())
+        }
+    }
 }
 
 configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-library" }*/) {
@@ -40,12 +44,13 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
     apply(plugin = "scala")
     apply(plugin = "checkstyle")
     // apply no automatic formatting validation for auto generated avro classes
-    if (subprojects.filter { it.name != "commmon:models" }.isNotEmpty()) {
+    if (!name.startsWith("models")) {
+//    if (subprojects.filter { it.name != ":commmon:models" }.isEmpty()) {
         apply(plugin = "com.diffplug.gradle.spotless")
         spotless {
             scala {
                 scalafmt()
-                licenseHeader("// Copyright (C) $YEAR geoHeil", "package ")
+                licenseHeader("// Copyright (C) 2020 geoHeil", "package ")
 //            target{
 //                exclude("**/*.md")
 //                excludeBuildDirectories()
@@ -53,7 +58,7 @@ configure(subprojects/*.filter { it.name == "greeter" || it.name == "greeting-li
             }
             kotlin {
                 ktfmt()
-                licenseHeader("// Copyright (C) $YEAR geoHeil", "package ")
+                licenseHeader("// Copyright (C) 2020 geoHeil", "package ")
             }
         }
     }

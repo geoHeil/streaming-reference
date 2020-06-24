@@ -1,0 +1,136 @@
+{
+    "type": "record",
+    "name": "Tweet",
+    "namespace": "com.github.geoheil.streamingreference",
+    "fields": [
+        {
+            "name": "tweet_id",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "text",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "source",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "geo",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "place",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "lang",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "created_at",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "timestamp_ms",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "coordinates",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "user_id",
+            "type": [
+                "null",
+                "long"
+            ]
+        },
+        {
+            "name": "user_name",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "screen_name",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "user_created_at",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "followers_count",
+            "type": [
+                "null",
+                "long"
+            ]
+        },
+        {
+            "name": "friends_count",
+            "type": [
+                "null",
+                "long"
+            ]
+        },
+        {
+            "name": "user_lang",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "user_location",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "hashtags",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "string"
+                }
+            ]
+        }
+    ]
+}

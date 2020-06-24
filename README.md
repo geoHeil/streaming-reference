@@ -20,6 +20,7 @@ docker-compuse up
 - NiFi localhost:8080/nifi/
 - NiFi registry localhost:18080/nifi-registry
 - Schema registry localhost:8081
+- Confluent control center http://localhost:9021
 - Flink localhost:8082
 - zookeeper localhost:8081
 
@@ -164,9 +165,6 @@ PUT _template/bits_template
   "order": 1,
   "mappings": {
      "properties": {
-      "last": {
-        "type": "float"
-      },
       "reindexBatch": {
         "type": "text",
         "fields": {
@@ -175,6 +173,9 @@ PUT _template/bits_template
             "ignore_above": 256
           }
         }
+      },
+      "last": {
+        "type": "float"
       },
       "timestamp": {
         "type": "date",
@@ -186,7 +187,21 @@ PUT _template/bits_template
       }
     }
   }
+}
+
+# template only applied to new ones - delete old ones
+DELETE bits*
+
+# alternatively reindex
+POST _reindex
+{
+  "source": {
+    "index": "twitter"
+  },
+  "dest": {
+    "index": "new_twitter"
   }
+}
 ```
 
 #### Cleaning up in Elastic
@@ -194,6 +209,218 @@ PUT _template/bits_template
 ```
 DELETE bitstamp*
 DELETE fixed-bitstamp-*
+```
+
+### tweets example
+
+enter twitter API credentials
+
+using a JOLT of:
+
+```
+[{
+  "operation": "shift",
+  "spec": {
+    "id_str" : "tweet_id",
+    "text" : "text",
+    "source" : "source",
+    "geo": "geo",
+    "place": "place",
+    "lang": "lang",
+    "created_at":"created_at",
+    "timestamp_ms":"timestamp_ms",
+    "coordinates":"coordinates",
+    "user": {
+      "id": "user_id",
+      "name": "user_name",
+      "screen_name": "screen_name",
+      "created_at": "user_created_at",
+      "followers_count": "followers_count",
+      "friends_count" : "friends_count",
+      "lang":"user_lang",
+      "location": "user_location"
+    },
+    "entities": {
+      "hashtags" : "hashtags"
+    }
+ }
+}]
+```
+to reshape the tweets, we can define an Avro Schema in Confluent registry:
+
+```
+{
+    "type": "record",
+    "name": "nifiRecord",
+    "namespace": "org.apache.nifi",
+    "fields": [
+        {
+            "name": "tweet_id",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "text",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "source",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "geo",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "place",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "lang",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "created_at",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "timestamp_ms",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "coordinates",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "user_id",
+            "type": [
+                "null",
+                "long"
+            ]
+        },
+        {
+            "name": "user_name",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "screen_name",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "user_created_at",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "followers_count",
+            "type": [
+                "null",
+                "long"
+            ]
+        },
+        {
+            "name": "friends_count",
+            "type": [
+                "null",
+                "long"
+            ]
+        },
+        {
+            "name": "user_lang",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "user_location",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "hashtags",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "string"
+                }
+            ]
+        }
+    ]
+}
+```
+
+To view all the subjects registered in Schema Registry (assuming Schema Registry is running on the local machine listening on port 8081):
+
+```
+curl --silent -X GET http://localhost:8081/subjects/ | jq .
+```
+
+Nothing there yet. Let's upload a schema:
+
+```
+curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
+
+curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" -d @common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
+```
+
+To view the latest schema for this subject in more detail:
+
+```
+curl --silent -X GET http://localhost:8081/subjects/tweets-raw-value/versions/latest | jq .
+```
+
+Now, write to kafka. Create a partition:
+
+```
+docker-compose exec broker \
+    kafka-topics --create --topic tweets-raw --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
+
+docker-compose exec broker \
+    kafka-topics --delete --topic tweets-raw --zookeeper zookeeper:2181
+
+docker-compose exec broker  \
+    kafka-topics --describe --topic tweets-raw --zookeeper zookeeper:2181
+
+docker-compose exec broker  \
+    kafka-console-consumer --bootstrap-server localhost:29092 --topic tweets-raw --from-beginning --max-messages 30
 ```
 
 ### minifi

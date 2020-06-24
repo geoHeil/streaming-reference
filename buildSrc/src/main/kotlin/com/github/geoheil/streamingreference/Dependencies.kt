@@ -17,6 +17,7 @@ object Libraries {
 
     private object Versions {
         //const val slf4jVersion = "" // 1.7.15 todo figure out which version to use
+        const val pureconfigV = "0.12.3"
     }
 
     const val scalaLibrary = "org.scala-lang:scala-library:${SharedVersions.scalaV}"
@@ -26,6 +27,10 @@ object Libraries {
     const val flinkStreamingJava = "org.apache.flink:flink-streaming-java_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
     const val flinkStreamingScala = "org.apache.flink:flink-streaming-scala_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
     //const val slf4j = org.slf4j:slf4j-log4j12:${slf4jVersion}"
+
+    const val pureConfig = "com.github.pureconfig:pureconfig_${SharedVersions.scalaVBase}:${Versions.pureconfigV}"
+    const val pureConfigEnumeratum = "com.github.pureconfig:pureconfig-enumeratum_${SharedVersions.scalaVBase}:${Versions.pureconfigV}"
+
 }
 
 object TestLibraries {

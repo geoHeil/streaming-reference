@@ -5,13 +5,14 @@ import com.github.geoheil.streamingreference.Libraries
 //}
 // https://github.com/johnrengelman/shadow/issues/336
 
-description = "Streaming Wordcount"
+description = "Tweets"
 
 dependencies {
     compileOnly(Libraries.flinkJava)
     compileOnly(Libraries.flinkRuntime)
     compileOnly(Libraries.flinkRuntimeWeb)
     compileOnly(Libraries.flinkStreamingScala)
+    implementation(project(":common"))
 }
 
 //val mainClass = "com.github.geoheil.streamingreference.streamingwc.StreamingWordCount"
