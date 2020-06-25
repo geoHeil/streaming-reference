@@ -26,6 +26,11 @@ object Libraries {
     const val flinkRuntime = "org.apache.flink:flink-runtime_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
     const val flinkStreamingJava = "org.apache.flink:flink-streaming-java_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
     const val flinkStreamingScala = "org.apache.flink:flink-streaming-scala_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
+
+    const val flinkAvro = "org.apache.flink:flink-avro:${SharedVersions.flinkV}"
+    const val flinkAvroConfluentRegistry = "org.apache.flink:flink-avro-confluent-registry:${SharedVersions.flinkV}"
+    const val flinkConnectorKafka = "org.apache.flink:flink-connector-kafka_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
+
     //const val slf4j = org.slf4j:slf4j-log4j12:${slf4jVersion}"
 
     const val pureConfig = "com.github.pureconfig:pureconfig_${SharedVersions.scalaVBase}:${Versions.pureconfigV}"

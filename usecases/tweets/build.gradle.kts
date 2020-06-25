@@ -13,6 +13,8 @@ dependencies {
     compileOnly(Libraries.flinkRuntimeWeb)
     compileOnly(Libraries.flinkStreamingScala)
     implementation(project(":common"))
+    implementation(Libraries.flinkConnectorKafka)
+    implementation(Libraries.flinkAvroConfluentRegistry)
 }
 
 //val mainClass = "com.github.geoheil.streamingreference.streamingwc.StreamingWordCount"

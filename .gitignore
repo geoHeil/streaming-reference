@@ -7,3 +7,4 @@ for_nifi/conf/archive
 # Ignore Gradle build output directory
 build
 .idea
+common/models/src/generated

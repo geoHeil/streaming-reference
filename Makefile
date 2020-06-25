@@ -16,6 +16,11 @@ run-local-Socket:
 
 run-local-Tweets:
 	./gradlew :usecases:tweets:shadowJar
+	FLINK_ENV_JAVA_OPTS=-Dconfig.file="config/jobs/twitter-analysis.conf" \
 	flink run --class com.github.geoheil.streamingreference.tweets.TweetsAnalysis \
-		"usecases/tweets/build/libs/tweets_${SCALA_VERSION}-${VERSION}-all.jar" \
-		-yD env.java.opts="-Dconfig.file='config/jobs/twitter-analysis.conf'"
+		"usecases/tweets/build/libs/tweets_${SCALA_VERSION}-${VERSION}-all.jar"
+
+
+# to run on yarn read
+# https://stackoverflow.com/questions/1322643/makefile-how-to-add-a-prefix-to-the-basename
+# and the linked Flink mailinglist discussion
