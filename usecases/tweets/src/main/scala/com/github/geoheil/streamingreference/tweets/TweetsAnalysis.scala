@@ -26,12 +26,15 @@ import pureconfig.module.enumeratum._
 object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
   println(s"hello: ${c}")
 
-  val conf = new Configuration();
+  //val conf = new Configuration();
   // TODO optionally fall back to file (no kafka, no registry needed) and use manually specified avro schema
 
   // get the execution environment
   val env: StreamExecutionEnvironment =
     StreamExecutionEnvironment.getExecutionEnvironment
+  // force disable kryo
+  env.getConfig.disableGenericTypes()
+  env.getConfig.enableForceAvro()
 
   // TODO find a better way
 //  val conf = env.getConfig
@@ -56,6 +59,7 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
 //  enable checkpoint for kafka (Flink Kafka Consumer will consume records from a topic and periodically checkpoint all its Kafka offsets, together with the state of other operations, in a consistent manner.)
   // TODO support whole directory of files
   // TODO like in flink training falls back to file avro source if kafka is not enabled
+  /*
   val p = new AvroInputFormat[Tweet](
     new Path(
       "/Users/geoheil/development/projects/streaming-reference/example-data/twitter-avro/1bd1a264-c1b2-4c7f-bbf2-3d73ddb7f9af.json"
@@ -65,6 +69,8 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
   val inputDataset = env.createInput(p);
   inputDataset.print
   env.execute("asdf")
+
+   */
 //  println(inputDataset.dataType)
 //  println(inputDataset.countWindowAll(10))
 //  println(inputDataset.name)
