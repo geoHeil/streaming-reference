@@ -16,6 +16,8 @@ import java.util.Properties
 
 import com.github.geoheil.streamingreference.Tweet
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.core.fs.Path
+import org.apache.flink.formats.avro.AvroInputFormat
 import org.apache.flink.formats.avro.registry.confluent.ConfluentRegistryAvroDeserializationSchema
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer.Semantic
 import pureconfig.generic.auto._
@@ -30,6 +32,11 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
   // get the execution environment
   val env: StreamExecutionEnvironment =
     StreamExecutionEnvironment.getExecutionEnvironment
+
+  // TODO find a better way
+//  val conf = env.getConfig
+//  conf..disableForceKryo()
+//  conf.enableForceAvro()
 //  val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf)
 
   // read and log basic information from Kafka
@@ -47,6 +54,21 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
 
   // **************************************************
 //  enable checkpoint for kafka (Flink Kafka Consumer will consume records from a topic and periodically checkpoint all its Kafka offsets, together with the state of other operations, in a consistent manner.)
+  // TODO support whole directory of files
+  // TODO like in flink training falls back to file avro source if kafka is not enabled
+  val p = new AvroInputFormat[Tweet](
+    new Path(
+      "/Users/geoheil/development/projects/streaming-reference/example-data/twitter-avro/1bd1a264-c1b2-4c7f-bbf2-3d73ddb7f9af.json"
+    ),
+    classOf[Tweet]
+  )
+  val inputDataset = env.createInput(p);
+  inputDataset.print
+  env.execute("asdf")
+//  println(inputDataset.dataType)
+//  println(inputDataset.countWindowAll(10))
+//  println(inputDataset.name)
+
   env.enableCheckpointing(5000)
 
   //set all required properties which is important to connect with kafka
