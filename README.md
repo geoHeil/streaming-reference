@@ -499,11 +499,48 @@ take the output from there
 ```
 
 and paste it to https://flink.apache.org/visualizer/. The result should be similar to:
-![minimal plan](img/flink-minimal-plan "")
+![minimal plan](img/flink-minimal-plan.png "")
 
 #### Confluent Schema registry interactive
 
-TODO
+- let's add some more missing JARs:
+
+```bash
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro-confluent-registry/1.10.1/flink-avro-confluent-registry-1.10.1.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro/1.10.1/flink-avro-1.10.1.jar -P lib/
+
+wget https://repo1.maven.org/maven2/org/apache/flink/force-shading/1.10.1/force-shading-1.10.1.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/avro/avro/1.8.2/avro-1.8.2.jar -P lib/
+```
+
+- now start the shell again
+
+```bash
+export TERM=xterm-color
+./bin/start-scala-shell.sh local
+```
+
+- and execute
+
+```scala
+import org.apache.flink.streaming.connectors.kafka.{
+  FlinkKafkaConsumer,
+  FlinkKafkaProducer
+}
+import org.apache.flink.formats.avro.registry.confluent.ConfluentRegistryAvroDeserializationSchema
+import java.util.Properties
+
+senv.enableCheckpointing(5000)
+
+final case class Tweet(tweet_id: Option[String], text: Option[String], source: Option[String], geo: Option[String], place: Option[String], lang: Option[String], created_at: Option[String], timestamp_ms: Option[String], coordinates: Option[String], user_id: Option[Long], user_name: Option[String], screen_name: Option[String], user_created_at: Option[String], followers_count: Option[Long], friends_count: Option[Long], user_lang: Option[String], user_location: Option[String], hashtags: Option[Seq[String]])
+
+val properties = new Properties()
+properties.setProperty("bootstrap.servers", "localhost:9092")
+properties.setProperty("group.id", "test")
+val schemaRegistryUrl = "http://localhost:8081"
+val serializer = ConfluentRegistryAvroDeserializationSchema.forSpecific[Tweet](classOf[Tweet], schemaRegistryUrl)
+
+```
 
 ### minifi
 
@@ -520,7 +557,7 @@ TODO
 
 ### kibana
 
-
+TODO
 
 ### pulsar
 
