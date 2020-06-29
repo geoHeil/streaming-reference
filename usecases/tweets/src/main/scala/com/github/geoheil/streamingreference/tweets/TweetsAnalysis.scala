@@ -78,15 +78,8 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
   //get the avro deserialize and serialize object
   val serializer = ConfluentRegistryAvroDeserializationSchema
     .forSpecific[Tweet](classOf[Tweet], schemaRegistryUrl)
-  // TODO experiment with both specific and generic. How to get a schema for the generic Tweet?
+  // TODO pre-key the tweets with lang directly from NiFi
   // ConfluentRegistryAvroDeserializationSchema.forGeneric("tweets-raw-value", schemaRegistryUrl)
-
-  // ************************
-  // TODO fix this:
-  // val serializer = ConfluentRegistryAvroDeserializationSchema.forSpecific[Tweet](classOf[Tweet], schemaRegistryUrl)
-  // error: type arguments [Tweet] conform to the bounds of none of the overloaded alternatives of
-  // value forSpecific: [T <: org.apache.avro.specific.SpecificRecord](x$1: Class[T], x$2: String, x$3: Int)org.apache.flink.formats.avro.registry.confluent.ConfluentRegistryAvroDeserializationSchema[T] <and> [T <: org.apache.avro.specific.SpecificRecord](x$1: Class[T], x$2: String)org.apache.flink.formats.avro.registry.confluent.ConfluentRegistryAvroDeserializationSchema[T]
-  // ************************
 
   val stream = env.addSource(
     new FlinkKafkaConsumer(
@@ -94,7 +87,7 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
       serializer,
       properties
     ).setStartFromEarliest() // TODO experiment with different start values
-  );
+  )
 
   stream.print
 

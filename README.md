@@ -532,7 +532,7 @@ import java.util.Properties
 
 senv.enableCheckpointing(5000)
 
-final case class Tweet(tweet_id: Option[String], text: Option[String], source: Option[String], geo: Option[String], place: Option[String], lang: Option[String], created_at: Option[String], timestamp_ms: Option[String], coordinates: Option[String], user_id: Option[Long], user_name: Option[String], screen_name: Option[String], user_created_at: Option[String], followers_count: Option[Long], friends_count: Option[Long], user_lang: Option[String], user_location: Option[String], hashtags: Option[Seq[String]])
+// TODO add generate tweet class. Make sure to generate a specific schema
 
 val properties = new Properties()
 properties.setProperty("bootstrap.servers", "localhost:9092")
@@ -540,6 +540,16 @@ properties.setProperty("group.id", "test")
 val schemaRegistryUrl = "http://localhost:8081"
 val serializer = ConfluentRegistryAvroDeserializationSchema.forSpecific[Tweet](classOf[Tweet], schemaRegistryUrl)
 
+val stream = senv.addSource(
+    new FlinkKafkaConsumer(
+      "tweets-raw",
+      serializer,
+      properties
+    ).setStartFromEarliest() // TODO experiment with different start values
+  )
+
+stream.print
+senv.execute("Kafka Consumer Test")
 ```
 
 ### minifi
