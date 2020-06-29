@@ -423,6 +423,88 @@ docker-compose exec broker  \
     kafka-console-consumer --bootstrap-server localhost:29092 --topic tweets-raw --from-beginning --max-messages 30
 ```
 
+#### a minimalistic kafacat example
+
+```
+docker-compose exec broker \
+    kafka-topics --create --topic hello-streams --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
+
+kafkacat -C -b localhost:9092 -t hello-streams #starts listener
+kafkacat -P -b localhost:9092 -t hello-streams #starts producer
+
+## type along to produce some messages
+```
+
+Now start an interactive flink shell somewhere.
+
+Be sure to take care of:
+
+- scala 2.11 (not 2.12): https://stackoverflow.com/questions/54950741/flink-1-7-2-start-scala-shell-sh-cannot-find-or-load-main-class-org-apache-flink
+- as all the kafka and other docker containers have a clashing port range with flink`s default settings, please change: 
+
+```
+vi conf/flink-conf.yaml
+
+# and set:
+rest.port: 8089
+```
+
+- fix outdated JLine version in Terminal https://stackoverflow.com/questions/62370582/flink-start-scala-shell-numberformat-exepction by setting: `export TERM=xterm-color`
+- download the kafka jar additional JAR (https://stackoverflow.com/questions/55098192/read-from-kafka-into-flink-scala-shell):
+
+```bash
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka_2.11/1.10.1/flink-connector-kafka_2.11-1.10.1.jar -P lib/
+
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka-base_2.11/1.10.1/flink-connector-kafka-base_2.11-1.10.1.jar -P lib/
+
+wget https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/0.10.2.1/kafka-clients-0.10.2.1.jar -P lib/
+```
+
+- finally start a local scala flink shell in 2.11:
+
+```bash
+export TERM=xterm-color
+./bin/start-scala-shell.sh local
+```
+
+We should see the squirrel and should be able to type some code. Additionally: http://localhost:8089 should provide the Flink UI:
+
+```scala
+import java.util.Properties
+import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaProducer}
+import org.apache.flink.api.common.serialization.SimpleStringSchema
+
+val properties = new Properties()
+properties.setProperty("bootstrap.servers", "localhost:9092")
+properties.setProperty("group.id", "test")
+properties.setProperty("auto.offset.reset", "earliest")
+
+val stream = senv.addSource[String](new FlinkKafkaConsumer("hello-streams", new SimpleStringSchema(), properties))
+stream.print
+
+senv.execute("Kafka Consumer Test")
+```
+
+To run it programmatically:
+
+```
+make run-local-TweetsMinimalistic01
+```
+
+take the output from there
+
+```
+{"nodes":[{"id":1,"type":"Source: Custom Source","pact":"Data Source","contents":"Source: Custom Source","parallelism":1},{"id":2,"type":"Sink: Print to Std. Out","pact":"Data Sink","contents":"Sink: Print to Std. Out","parallelism":1,"predecessors":[{"id":1,"ship_strategy":"FORWARD","side":"second"}]}]}
+```
+
+and paste it to https://flink.apache.org/visualizer/. The result should be similar to:
+![minimal plan](img/flink-minimal-plan "")
+
+#### Confluent Schema registry interactive
+
+TODO
+
 ### minifi
 
 TODO

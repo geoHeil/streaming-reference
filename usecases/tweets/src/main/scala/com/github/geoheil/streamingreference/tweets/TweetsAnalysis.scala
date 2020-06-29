@@ -13,18 +13,24 @@ import org.apache.flink.streaming.connectors.kafka.{
   FlinkKafkaProducer
 }
 import java.util.Properties
+
+import com.github.geoheil.streamingreference.Tweet
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.formats.avro.registry.confluent.ConfluentRegistryAvroDeserializationSchema
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer.Semantic
 import pureconfig.generic.auto._
 import pureconfig.module.enumeratum._
 
 object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
   println(s"hello: ${c}")
 
+  val conf = new Configuration();
   // TODO optionally fall back to file (no kafka, no registry needed) and use manually specified avro schema
 
   // get the execution environment
   val env: StreamExecutionEnvironment =
     StreamExecutionEnvironment.getExecutionEnvironment
+//  val env: StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf)
 
   // read and log basic information from Kafka
   // 1) using generated case classes
@@ -40,47 +46,96 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
 //    .print()
 
   // **************************************************
-  //enable checkpoint for kafka (Flink Kafka Consumer will consume records from a topic and periodically checkpoint all its Kafka offsets, together with the state of other operations, in a consistent manner.)
-  /*
+//  enable checkpoint for kafka (Flink Kafka Consumer will consume records from a topic and periodically checkpoint all its Kafka offsets, together with the state of other operations, in a consistent manner.)
   env.enableCheckpointing(5000)
 
   //set all required properties which is important to connect with kafka
   val properties = new Properties()
+  //properties.setProperty("bootstrap.servers", c.kafka.bootstrapServers)
   properties.setProperty("bootstrap.servers", "localhost:9092")
   // only required for Kafka 0.8
-  properties.setProperty("zookeeper.connect", "localhost:2181")
+  //properties.setProperty("zookeeper.connect", c.kafka.zookeeper)
   properties.setProperty("group.id", "test")
   // always read the Kafka topic from the start
-  properties.setProperty("auto.offset.reset", "earliest")
+  //properties.setProperty("auto.offset.reset", "earliest")
+
+  val schemaRegistryUrl = "http://localhost:8081"
+
+  // toy example
+//  val myProducer = new FlinkKafkaProducer[String](
+//    "localhost:9092",         // broker list
+//    "my-topic",               // target topic
+//    new SimpleStringSchema)   // serialization schema
+//  val writerProp = new Properties();
+//  writerProp.put("bootstrap.servers", "localhost:9092")
+//  val myProducer = new FlinkKafkaProducer("my-topic",
+//      new SimpleStringSchema(),
+//    writerProp,
+//      Semantic.EXACTLY_ONCE);
+//      myProducer.setWriteTimestampToKafka(true)
+//  stream.addSink(myProducer)
+
+  //get the avro deserialize and serialize object
+  val serializer = ConfluentRegistryAvroDeserializationSchema
+    .forSpecific[Tweet](classOf[Tweet], schemaRegistryUrl)
+  // TODO experiment with both specific and generic. How to get a schema for the generic Tweet?
+  // ConfluentRegistryAvroDeserializationSchema.forGeneric("tweets-raw-value", schemaRegistryUrl)
+
+  // ************************
+  // TODO fix this:
+  // val serializer = ConfluentRegistryAvroDeserializationSchema.forSpecific[Tweet](classOf[Tweet], schemaRegistryUrl)
+  // error: type arguments [Tweet] conform to the bounds of none of the overloaded alternatives of
+  // value forSpecific: [T <: org.apache.avro.specific.SpecificRecord](x$1: Class[T], x$2: String, x$3: Int)org.apache.flink.formats.avro.registry.confluent.ConfluentRegistryAvroDeserializationSchema[T] <and> [T <: org.apache.avro.specific.SpecificRecord](x$1: Class[T], x$2: String)org.apache.flink.formats.avro.registry.confluent.ConfluentRegistryAvroDeserializationSchema[T]
+  // ************************
+
+  val stream = env.addSource(
+    new FlinkKafkaConsumer(
+      "tweets-raw",
+      serializer,
+      properties
+    ).setStartFromEarliest() // TODO experiment with different start values
+  );
+
+  stream.print
+
+  // using Avro & schema registry
+
+  /*
 
   //crete the employee list which can be used to send data in kafka
-  val userList = env.fromElements(
-    new User("Yogesh", 26,"Yellow"),
-    new User("Keshav",76,"Green"),
-    new User("Mahesh",45,"Blue"))
+  val tweets = env.fromElements(
+    Tweet(tweet_id= None, text = Some("asdf"), source = None, geo= None, place = None, lang = None, created_at = None, timestamp_ms = None, coordinates = None, user_id = None, user_name = Some("Yogesh"), screen_name = None, user_created_at= None, followers_count = None, friends_count = None, user_lang = Some("en"), user_location = None, hashtags = None),
+    Tweet(tweet_id= None, text = Some("as df gf"), source = None, geo= None, place = None, lang = None, created_at = None, timestamp_ms = None, coordinates = None, user_id = None, user_name = Some("Keshav"), screen_name = None, user_created_at= None, followers_count = None, friends_count = None, user_lang = Some("de"), user_location = None, hashtags = None),
+    Tweet(tweet_id= None, text = Some("asdf kjölk asdf"), source = None, geo= None, place = None, lang = None, created_at = None, timestamp_ms = None, coordinates = None, user_id = None, user_name = Some("Mahesh"), screen_name = None, user_created_at= None, followers_count = None, friends_count = None, user_lang = Some("en"), user_location = None, hashtags = None))
 
   //perform key-by name operation to generate data-stream and send data to kafka(Note : while writing class(pojo) we need to use TypeInformationSerializationSchema)
-  val userSource = userList.keyBy("name")
+  val userSource = tweets.keyBy("lang")
 
   //get the avro deserialize and serialize object for the employee instance which is case class
-  val userSerialize : AvroSerializationSchema[User] = new AvroSerializationSchema[User](classOf[User])
+  val userSerialize = new ConfluentRegistryAvroDeserializationSchema[Tweet](classOf[Tweet])
+  //val userSerialize : AvroSerializationSchema[Tweet] = new AvroSerializationSchema[Tweet](classOf[Tweet])
   //val employeeDeserialize : AvroDeserializationSchema[Employee] = new AvroDeserializationSchema[Employee](classOf[Employee])
 
   val schemaRegistryUrl = "http://localhost:8081"
 
   //write the employee data into kafka using avro serialization
-  userSource.addSink(new FlinkKafkaProducer[User]("test", userSerialize, properties))
+  userSource.addSink(new FlinkKafkaProducer[Tweet]("test", userSerialize, properties))
 
   //read the employee data from kafka using avro deserialization(
-  val userKafkaReaderResult = env.addSource(new FlinkKafkaConsumer[User]("test",
-    ConfluentRegistryAvroDeserializationSchema.forSpecific(classOf[User], schemaRegistryUrl), properties).setStartFromEarliest())
+  val userKafkaReaderResult = env.addSource(new FlinkKafkaConsumer[Tweet]("test",
+    ConfluentRegistryAvroDeserializationSchema.forGeneric(classOf[Tweet], schemaRegistryUrl), properties).setStartFromEarliest())
 
   //print the output data read from kafka
   userKafkaReaderResult.print()
 
 
-  env.execute("Avro Serialization/Deserialization using Confluent Registry Example")
+   */
 
- */
+  // for visual topology of the pipeline. Paste the below output in https://flink.apache.org/visualizer/
+  println(env.getExecutionPlan)
+
+  env.execute(
+    "Avro Serialization/Deserialization using Confluent Registry Example"
+  )
 
 }

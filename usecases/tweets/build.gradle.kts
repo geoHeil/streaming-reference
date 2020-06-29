@@ -12,8 +12,11 @@ dependencies {
     compileOnly(Libraries.flinkRuntime)
     compileOnly(Libraries.flinkRuntimeWeb)
     compileOnly(Libraries.flinkStreamingScala)
+
     implementation(project(":common"))
+    implementation(project(":common:models"))
     implementation(Libraries.flinkConnectorKafka)
+    //implementation(Libraries.flinkAvro)
     implementation(Libraries.flinkAvroConfluentRegistry)
 }
 
