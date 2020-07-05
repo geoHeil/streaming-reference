@@ -421,6 +421,9 @@ docker-compose exec broker  \
 
 docker-compose exec broker  \
     kafka-console-consumer --bootstrap-server localhost:29092 --topic tweets-raw --from-beginning --max-messages 30
+
+docker-compose exec broker \
+    kafka-topics --create --topic tweets-raw-json --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
 ```
 
 #### a minimalistic kafacat example
@@ -551,6 +554,86 @@ val stream = senv.addSource(
 stream.print
 senv.execute("Kafka Consumer Test")
 ```
+
+### spark
+
+Using structured streaming.
+For sake of brevity this will be console only. Also, let's use spark 3.x as it as updated recently.
+
+My default spark-shell currently still points to 2.x, so I will specify the full path.
+
+#### JSON
+
+```bash
+/usr/local/Cellar/apache-spark/3.0.0/libexec/bin/spark-shell \
+    --packages org.apache.spark:spark-avro_2.12:3.0.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0 \ --conf spark.sql.streaming.schemaInference=true
+```
+
+```scala
+// batch
+val df = spark
+  .read
+  .format("kafka")
+  .option("kafka.bootstrap.servers", "localhost:9092")
+  .option("subscribe", "tweets-raw-json")
+  .load()
+
+df.printSchema
+import org.apache.spark.sql.types._
+val jsonDf = df.withColumn("value_string", col("value").cast(StringType))
+
+final case class Tweet(tweet_id: Option[String], text: Option[String], source: Option[String], geo: Option[String], place: Option[String], lang: Option[String], created_at: Option[String], timestamp_ms: Option[String], coordinates: Option[String], user_id: Option[Long], user_name: Option[String], screen_name: Option[String], user_created_at: Option[String], followers_count: Option[Long], friends_count: Option[Long], user_lang: Option[String], user_location: Option[String], hashtags: Option[Seq[String]])
+
+import org.apache.spark.sql.catalyst.ScalaReflection
+import scala.reflect.runtime.universe._
+
+val s = ScalaReflection.schemaFor[Tweet].dataType.asInstanceOf[StructType]
+jsonDf.select(from_json(col("value_string"))).printSchema.show(false)
+
+
+// streaming
+val df = spark
+  .readStream
+  .format("kafka")
+  .option("kafka.bootstrap.servers", "localhost:9092")
+  .option("subscribe", "tweets-raw-json")
+  .load()
+
+
+val consoleOutput = inputDf.writeStream
+  .outputMode("append")
+  .format("console")
+  .start()
+consoleOutput.awaitTermination()
+
+```
+
+
+#### Avro
+
+additionally to the lines from before
+
+```scala
+import org.apache.spark.sql.avro.functions._
+import org.apache.avro.SchemaBuilder
+
+
+val df = spark
+  .read//Stream
+  .format("kafka")
+  .option("kafka.bootstrap.servers", "localhost:9092")
+  .option("subscribe", "tweets-raw")
+  .load()
+
+val avroString = df.withColumn("value_string", col("value").cast(StringType))
+avroString.select(from_json(col("value_string"))).printSchema//.show(false)
+df.select(from_avro(col("value"), s)).printSchema//.show(false)
+
+// TODO instead read the schema from the schema registry
+
+df.select(from_avro($"value", "tweets-raw-value", "localhost:8081").as("value")).printSchema
+```
+
 
 ### minifi
 
