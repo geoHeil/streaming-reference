@@ -3,7 +3,7 @@ package com.github.geoheil.streamingreference.tweets
 
 import java.util.Properties
 
-import com.github.geoheil.streamingreference.common.FlinkBaseJob
+import com.github.geoheil.streamingreference.FlinkBaseJob
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer

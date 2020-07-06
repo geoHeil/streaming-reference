@@ -1,7 +1,8 @@
 // Copyright (C) 2020 geoHeil
-package com.github.geoheil.streamingreference.common
+package com.github.geoheil.streamingreference
 
 //import com.sun.org.slf4j.internal.LoggerFactory
+import com.github.geoheil.streamingreference.common.ConfigurationUtils
 import pureconfig.ConfigReader
 
 abstract class FlinkBaseJob[T <: Product](implicit A: ConfigReader[T])

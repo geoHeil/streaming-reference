@@ -393,18 +393,16 @@ To view all the subjects registered in Schema Registry (assuming Schema Registry
 curl --silent -X GET http://localhost:8081/subjects/ | jq .
 ```
 
-Nothing there yet. Let's upload a schema:
+Nothing there yet. Let's upload a schema (this does not work as the JSON would need to be string encoded, otherwise the request is OK):
 
 ```
-curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
+#curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
 
-curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" -d @common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
-```
+#curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" -d @common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
 
-To view the latest schema for this subject in more detail:
+curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data '{"schema": "{\"type\":\"record\",\"name\":\"nifiRecord\",\"namespace\":\"org.apache.nifi\",\"fields\":[{\"name\":\"tweet_id\",\"type\":[\"null\",\"string\"]},{\"name\":\"text\",\"type\":[\"null\",\"string\"]},{\"name\":\"source\",\"type\":[\"null\",\"string\"]},{\"name\":\"geo\",\"type\":[\"null\",\"string\"]},{\"name\":\"place\",\"type\":[\"null\",\"string\"]},{\"name\":\"lang\",\"type\":[\"null\",\"string\"]},{\"name\":\"created_at\",\"type\":[\"null\",\"string\"]},{\"name\":\"timestamp_ms\",\"type\":[\"null\",\"string\"]},{\"name\":\"coordinates\",\"type\":[\"null\",\"string\"]},{\"name\":\"user_id\",\"type\":[\"null\",\"long\"]},{\"name\":\"user_name\",\"type\":[\"null\",\"string\"]},{\"name\":\"screen_name\",\"type\":[\"null\",\"string\"]},{\"name\":\"user_created_at\",\"type\":[\"null\",\"string\"]},{\"name\":\"followers_count\",\"type\":[\"null\",\"long\"]},{\"name\":\"friends_count\",\"type\":[\"null\",\"long\"]},{\"name\":\"user_lang\",\"type\":[\"null\",\"string\"]},{\"name\":\"user_location\",\"type\":[\"null\",\"string\"]},{\"name\":\"hashtags\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"string\"}]}]}"}' http://localhost:8081/subjects/tweets-raw-value/versions
 
-```
-curl --silent -X GET http://localhost:8081/subjects/tweets-raw-value/versions/latest | jq .
+curl --silent -X GET http://localhost:8081/subjects/ | jq .
 ```
 
 Now, write to kafka. Create a partition:
@@ -426,6 +424,16 @@ docker-compose exec broker \
     kafka-topics --create --topic tweets-raw-json --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
 ```
 
+Instead, go to: localhost:9021 and simply create the schema in the UI.
+
+To view the latest schema for this subject in more detail:
+
+```
+curl --silent -X GET http://localhost:8081/subjects/ | jq .
+curl --silent -X GET http://localhost:8081/subjects/tweets-raw-value/versions/latest | jq .
+```
+
+
 #### a minimalistic kafacat example
 
 ```
@@ -443,7 +451,7 @@ Now start an interactive flink shell somewhere.
 Be sure to take care of:
 
 - scala 2.11 (not 2.12): https://stackoverflow.com/questions/54950741/flink-1-7-2-start-scala-shell-sh-cannot-find-or-load-main-class-org-apache-flink
-- as all the kafka and other docker containers have a clashing port range with flink`s default settings, please change: 
+- as all the kafka and other docker containers have a clashing port range with flink`s default settings, please change:
 
 ```
 vi conf/flink-conf.yaml
@@ -565,16 +573,19 @@ My default spark-shell currently still points to 2.x, so I will specify the full
 #### JSON
 
 ```bash
-/usr/local/Cellar/apache-spark/3.0.0/libexec/bin/spark-shell \
-    --packages org.apache.spark:spark-avro_2.12:3.0.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0 \ --conf spark.sql.streaming.schemaInference=true
+/usr/local/Cellar/apache-spark/3.0.0/libexec/bin/spark-shell --master 'local[4]'\
+    --packages org.apache.spark:spark-avro_2.12:3.0.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0 \
+    --conf spark.sql.shuffle.partitions=4
 ```
 
 ```scala
 // batch
 val df = spark
   .read
+  //.readStream
   .format("kafka")
   .option("kafka.bootstrap.servers", "localhost:9092")
+  //.option("startingOffsets", "earliest") // start from the beginning each time
   .option("subscribe", "tweets-raw-json")
   .load()
 
@@ -582,56 +593,114 @@ df.printSchema
 import org.apache.spark.sql.types._
 val jsonDf = df.withColumn("value_string", col("value").cast(StringType))
 
+// case class schema auto-generated from Avro
 final case class Tweet(tweet_id: Option[String], text: Option[String], source: Option[String], geo: Option[String], place: Option[String], lang: Option[String], created_at: Option[String], timestamp_ms: Option[String], coordinates: Option[String], user_id: Option[Long], user_name: Option[String], screen_name: Option[String], user_created_at: Option[String], followers_count: Option[Long], friends_count: Option[Long], user_lang: Option[String], user_location: Option[String], hashtags: Option[Seq[String]])
 
 import org.apache.spark.sql.catalyst.ScalaReflection
 import scala.reflect.runtime.universe._
 
 val s = ScalaReflection.schemaFor[Tweet].dataType.asInstanceOf[StructType]
-jsonDf.select(from_json(col("value_string"))).printSchema.show(false)
 
+
+val typedJson = jsonDf.select(from_json(col("value_string"), s).alias("value")).select($"value.*").as[Tweet]
+typedJson.printSchema
+// typedJson.show
+
+val fixedDtypes = typedJson.withColumn("ts", ($"timestamp_ms" / 1000).cast(TimestampType)).drop("timestamp_ms", "created_at")
+
+val result = fixedDtypes.groupBy("lang").count
+//result.show
+val consoleOutput = result.writeStream
+  .outputMode("complete")
+  .format("console")
+  .start()
+consoleOutput.awaitTermination()
+// sadly we need to fully stop the spark shell to work on the next part
+
+
+val result = fixedDtypes.withWatermark("ts", "2 minutes").groupBy(window($"ts", "2 minutes", "1 minutes"), col("lang")).count
 
 // streaming
-val df = spark
-  .readStream
-  .format("kafka")
-  .option("kafka.bootstrap.servers", "localhost:9092")
-  .option("subscribe", "tweets-raw-json")
-  .load()
+// change comments above to streaming.
+// be aware that show no longer works!
+// it is really useful for debugging running it in batch when developing ; ) and then changing a single line of code.
 
-
-val consoleOutput = inputDf.writeStream
-  .outputMode("append")
+val consoleOutput = result.writeStream
+  .outputMode("update") // append would only output when watermark is done. complete shows all, update only changes (including all intermediary changes).
   .format("console")
   .start()
 consoleOutput.awaitTermination()
 
+// TODO: discuss output modes & triggers. especially Trigger.once
 ```
 
+Make sure to visit http://localhost:4040/StreamingQuery/
+Also look at the nice UI new in Spark 3.x
+
+> Tuning hint: look at the shuffle partitions! This is crucial now. I can already tell you that the default 200 are way too slow.
 
 #### Avro
 
-additionally to the lines from before
+Start a fresh spark shell:
+
+```bash
+/usr/local/Cellar/apache-spark/3.0.0/libexec/bin/spark-shell --master 'local[4]'\
+    --repositories https://packages.confluent.io/maven \
+    --packages org.apache.spark:spark-avro_2.12:3.0.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0,za.co.absa:abris_2.12:3.2.1 \
+    --conf spark.sql.shuffle.partitions=4
+```
+
+and execute:
 
 ```scala
 import org.apache.spark.sql.avro.functions._
 import org.apache.avro.SchemaBuilder
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.catalyst.ScalaReflection
+import scala.reflect.runtime.universe._
 
+// case class schema auto-generated from Avro
+final case class Tweet(tweet_id: Option[String], text: Option[String], source: Option[String], geo: Option[String], place: Option[String], lang: Option[String], created_at: Option[String], timestamp_ms: Option[String], coordinates: Option[String], user_id: Option[Long], user_name: Option[String], screen_name: Option[String], user_created_at: Option[String], followers_count: Option[Long], friends_count: Option[Long], user_lang: Option[String], user_location: Option[String], hashtags: Option[Seq[String]])
+
+val s = ScalaReflection.schemaFor[Tweet].dataType.asInstanceOf[StructType]
 
 val df = spark
-  .read//Stream
+  .read
+  //.readStream
   .format("kafka")
   .option("kafka.bootstrap.servers", "localhost:9092")
   .option("subscribe", "tweets-raw")
   .load()
 
-val avroString = df.withColumn("value_string", col("value").cast(StringType))
-avroString.select(from_json(col("value_string"))).printSchema//.show(false)
-df.select(from_avro(col("value"), s)).printSchema//.show(false)
+// well we are ignoring Avro (=the schema) here 1) and 2) using a less efficient method
+// df.withColumn("value_string", col("value").cast(StringType)).select(from_json(col("value_string"), s).alias("value")).select($"value.*").printSchema
 
-// TODO instead read the schema from the schema registry
+// `from_avro` requires Avro schema in JSON string format.
+import java.nio.file.Files
+import java.nio.file.Paths
+val jsonFormatSchema = new String(Files.readAllBytes(Paths.get("common/models/src/main/avro/Tweet.avsc")))
 
-df.select(from_avro($"value", "tweets-raw-value", "localhost:8081").as("value")).printSchema
+// also does not work as for efficiency and explicit schema management reasons we use a registry
+// confluent and HWX Schema registry have different byte orderings
+// df.select(from_avro(col("value"), "jsonFormatSchema")).printSchema//.show(false)
+
+
+// instead read the schema from the schema registry
+// https://stackoverflow.com/questions/57950215/how-to-use-confluent-schema-registry-with-from-avro-standard-function
+
+// sadly an additional library is required
+import za.co.absa.abris.avro.read.confluent.SchemaManager
+import za.co.absa.abris.avro.functions.from_confluent_avro
+val config = Map(
+  SchemaManager.PARAM_SCHEMA_REGISTRY_URL -> "http://localhost:8081",
+  SchemaManager.PARAM_SCHEMA_REGISTRY_TOPIC -> "tweets-raw",
+  SchemaManager.PARAM_VALUE_SCHEMA_NAMING_STRATEGY -> "topic.name",
+  SchemaManager.PARAM_VALUE_SCHEMA_ID -> "latest"
+)
+
+df.printSchema
+val typedAvro = df.select(from_confluent_avro(col("value"), config) as 'data).select("data.*").as[Tweet]
+typedAvro.printSchema
 ```
 
 
