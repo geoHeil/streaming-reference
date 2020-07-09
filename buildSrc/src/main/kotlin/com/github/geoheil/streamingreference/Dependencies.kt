@@ -9,8 +9,8 @@ object Libraries {
         const val scalaVPatch = "11"
         const val scalaV = "$scalaVBase.$scalaVPatch"
 
-        const val flinkVBase = "1.10"
-        const val flinkVPatch = "1"
+        const val flinkVBase = "1.11"
+        const val flinkVPatch = "0"
         const val flinkV = "$flinkVBase.$flinkVPatch"
         val javaVersion = JavaVersion.VERSION_11
     }
@@ -26,6 +26,8 @@ object Libraries {
     const val flinkRuntime = "org.apache.flink:flink-runtime_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
     const val flinkStreamingJava = "org.apache.flink:flink-streaming-java_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
     const val flinkStreamingScala = "org.apache.flink:flink-streaming-scala_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
+    const val flinkTableApiScalaBridge = "org.apache.flink:flink-table-api-scala-bridge_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
+
 
     const val flinkAvro = "org.apache.flink:flink-avro:${SharedVersions.flinkV}"
     const val flinkAvroConfluentRegistry = "org.apache.flink:flink-avro-confluent-registry:${SharedVersions.flinkV}"

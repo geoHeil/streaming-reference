@@ -91,6 +91,8 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
 
   val schemaRegistryUrl = "http://localhost:8081"
 
+  //val events = env.addSource(new FlinkKafkaConsumer[Tweet]("twet-raw-json", new JsonSerde(classOf[Tweet], new Tweet), properties))
+
   // toy example
 //  val myProducer = new FlinkKafkaProducer[String](
 //    "localhost:9092",         // broker list

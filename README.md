@@ -102,19 +102,19 @@ For a spec of:
   "operation": "shift",
   "spec": {
     "timestamp" : "timestamp",
-  	"last" : "last",
-  	"volume" : "volume"
+    "last" : "last",
+    "volume" : "volume"
  }
- 
 },
 {
   "operation": "modify-overwrite-beta",
   "spec": {
-    "last": "=toDouble",
-    "volume": "=toDouble",
-   "timestamp": "${timestamp:append('000'):format('yyyy-MM-dd HH:mm:ss.SSS')}"
+  "last": "=toDouble",
+   "volume": "=toDouble",
+   "timestamp": "${formatted_ts}"
   }
-}]
+}
+]
 ```
 
 and input of:
@@ -133,7 +133,7 @@ and input of:
 }
 ```
 
-the data is cleaned up and transformed nicely.
+the data is cleaned up and transformed nicely. When the rigt attributes are set!
 </details>
 
 ### Elastic stuff
@@ -387,25 +387,8 @@ to reshape the tweets, we can define an Avro Schema in Confluent registry:
 }
 ```
 
-To view all the subjects registered in Schema Registry (assuming Schema Registry is running on the local machine listening on port 8081):
 
-```
-curl --silent -X GET http://localhost:8081/subjects/ | jq .
-```
-
-Nothing there yet. Let's upload a schema (this does not work as the JSON would need to be string encoded, otherwise the request is OK):
-
-```
-#curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
-
-#curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" -d @common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
-
-curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data '{"schema": "{\"type\":\"record\",\"name\":\"nifiRecord\",\"namespace\":\"org.apache.nifi\",\"fields\":[{\"name\":\"tweet_id\",\"type\":[\"null\",\"string\"]},{\"name\":\"text\",\"type\":[\"null\",\"string\"]},{\"name\":\"source\",\"type\":[\"null\",\"string\"]},{\"name\":\"geo\",\"type\":[\"null\",\"string\"]},{\"name\":\"place\",\"type\":[\"null\",\"string\"]},{\"name\":\"lang\",\"type\":[\"null\",\"string\"]},{\"name\":\"created_at\",\"type\":[\"null\",\"string\"]},{\"name\":\"timestamp_ms\",\"type\":[\"null\",\"string\"]},{\"name\":\"coordinates\",\"type\":[\"null\",\"string\"]},{\"name\":\"user_id\",\"type\":[\"null\",\"long\"]},{\"name\":\"user_name\",\"type\":[\"null\",\"string\"]},{\"name\":\"screen_name\",\"type\":[\"null\",\"string\"]},{\"name\":\"user_created_at\",\"type\":[\"null\",\"string\"]},{\"name\":\"followers_count\",\"type\":[\"null\",\"long\"]},{\"name\":\"friends_count\",\"type\":[\"null\",\"long\"]},{\"name\":\"user_lang\",\"type\":[\"null\",\"string\"]},{\"name\":\"user_location\",\"type\":[\"null\",\"string\"]},{\"name\":\"hashtags\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"string\"}]}]}"}' http://localhost:8081/subjects/tweets-raw-value/versions
-
-curl --silent -X GET http://localhost:8081/subjects/ | jq .
-```
-
-Now, write to kafka. Create a partition:
+Now, write to kafka. Create a topic:
 
 ```
 docker-compose exec broker \
@@ -422,6 +405,24 @@ docker-compose exec broker  \
 
 docker-compose exec broker \
     kafka-topics --create --topic tweets-raw-json --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181
+```
+
+To view all the subjects registered in Schema Registry (assuming Schema Registry is running on the local machine listening on port 8081):
+
+```
+curl --silent -X GET http://localhost:8081/subjects/ | jq .
+```
+
+Nothing there yet. Let's upload a schema (this does not work as the JSON would need to be string encoded, otherwise the request is OK):
+
+```
+#curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
+
+#curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" -d @common/models/src/main/avro/Tweet.avsc http://localhost:8081/subjects/tweets/versions
+
+curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data '{"schema": "{\"type\":\"record\",\"name\":\"nifiRecord\",\"namespace\":\"org.apache.nifi\",\"fields\":[{\"name\":\"tweet_id\",\"type\":[\"null\",\"string\"]},{\"name\":\"text\",\"type\":[\"null\",\"string\"]},{\"name\":\"source\",\"type\":[\"null\",\"string\"]},{\"name\":\"geo\",\"type\":[\"null\",\"string\"]},{\"name\":\"place\",\"type\":[\"null\",\"string\"]},{\"name\":\"lang\",\"type\":[\"null\",\"string\"]},{\"name\":\"created_at\",\"type\":[\"null\",\"string\"]},{\"name\":\"timestamp_ms\",\"type\":[\"null\",\"string\"]},{\"name\":\"coordinates\",\"type\":[\"null\",\"string\"]},{\"name\":\"user_id\",\"type\":[\"null\",\"long\"]},{\"name\":\"user_name\",\"type\":[\"null\",\"string\"]},{\"name\":\"screen_name\",\"type\":[\"null\",\"string\"]},{\"name\":\"user_created_at\",\"type\":[\"null\",\"string\"]},{\"name\":\"followers_count\",\"type\":[\"null\",\"long\"]},{\"name\":\"friends_count\",\"type\":[\"null\",\"long\"]},{\"name\":\"user_lang\",\"type\":[\"null\",\"string\"]},{\"name\":\"user_location\",\"type\":[\"null\",\"string\"]},{\"name\":\"hashtags\",\"type\":[\"null\",{\"type\":\"array\",\"items\":\"string\"}]}]}"}' http://localhost:8081/subjects/tweets-raw-value/versions
+
+curl --silent -X GET http://localhost:8081/subjects/ | jq .
 ```
 
 Instead, go to: localhost:9021 and simply create the schema in the UI.
@@ -464,9 +465,9 @@ rest.port: 8089
 - download the kafka jar additional JAR (https://stackoverflow.com/questions/55098192/read-from-kafka-into-flink-scala-shell):
 
 ```bash
-wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka_2.11/1.10.1/flink-connector-kafka_2.11-1.10.1.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka_2.11/1.11.0/flink-connector-kafka_2.11-1.11.0.jar -P lib/
 
-wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka-base_2.11/1.10.1/flink-connector-kafka-base_2.11-1.10.1.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka-base_2.11/1.11.0/flink-connector-kafka-base_2.11-1.11.0.jar -P lib/
 
 wget https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/0.10.2.1/kafka-clients-0.10.2.1.jar -P lib/
 ```
@@ -512,15 +513,144 @@ take the output from there
 and paste it to https://flink.apache.org/visualizer/. The result should be similar to:
 ![minimal plan](img/flink-minimal-plan.png "")
 
+#### JSON
+
+start the SQL shell of flink, note: some files are omitted for the sake of brevity of the DDL statement.
+
+```
+./bin/start-cluster.sh
+./bin/sql-client.sh embedded --environment conf/sql-client-defaults.yaml
+
+DROP TABLE IF EXISTS tweets_json;
+CREATE TABLE tweets_json (
+    tweet_id STRING,
+    text STRING,
+    source STRING,
+    geo STRING,
+    place STRING,
+    lang STRING,
+    created_at STRING,
+    screen_name STRING,
+    timestamp_ms STRING
+) WITH (
+    'connector.type' = 'kafka', -- kafka connector
+    'connector.version' = 'universal',  -- kafka universal 0.11
+    'connector.topic' = 'tweets-raw-json',
+    'connector.startup-mode' = 'earliest-offset',
+    'connector.properties.0.key' = 'zookeeper.connect',
+    'connector.properties.0.value' = 'localhost:2181', 
+    'connector.properties.1.key' = 'bootstrap.servers',
+    'connector.properties.1.value' = 'localhost:9092', 
+    'update-mode' = 'append',
+    'format.type' = 'json',
+    'format.derive-schema' = 'true' -- DDL schema json
+);
+
+SHOW TABLES;
+SELECT * FROM tweets_json;
+SELECT lang, count(lang) cnt FROM tweets_json GROUP BY lang;
+
+./bin/stop-cluster.sh
+```
+
+Now programmatically:
+
+- start the shell again
+
+```bash
+export TERM=xterm-color
+./bin/start-scala-shell.sh local
+```
+
+- and execute
+
+```scala
+import org.apache.flink.streaming.connectors.kafka.{
+  FlinkKafkaConsumer,
+  FlinkKafkaProducer
+}
+import java.util.Properties
+import org.apache.flink.api.common.serialization.SimpleStringSchema
+
+
+val properties = new Properties()
+properties.setProperty("bootstrap.servers", "localhost:9092")
+properties.setProperty("group.id", "test")
+val serializer = new SimpleStringSchema()
+
+val stream = senv.addSource(
+    new FlinkKafkaConsumer(
+      "tweets-raw-json",
+      serializer,
+      properties
+    ).setStartFromEarliest() // TODO experiment with different start values
+  )
+
+stream.print
+senv.execute("Kafka JSON example")
+```
+
+- generate some fresh tweets from NiFi
+- look at the logs
+- cancel the job from the UI
+
+Now we want to parse the JSON:
+
+```scala
+import org.apache.flink.streaming.connectors.kafka.{
+  FlinkKafkaConsumer,
+  FlinkKafkaProducer
+}
+import java.util.Properties
+import org.apache.flink.api.common.serialization.SimpleStringSchema
+val properties = new Properties()
+properties.setProperty("bootstrap.servers", "localhost:9092")
+properties.setProperty("group.id", "test")
+import org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
+import org.apache.flink.api.scala._
+import org.apache.flink.table.api._
+import org.apache.flink.table.api.bridge.scala._
+
+
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+
+
+val serializer = new JSONKeyValueDeserializationSchema(false)
+val stream = senv.addSource(
+    new FlinkKafkaConsumer(
+      "tweets-raw-json",
+      serializer,
+      properties
+    ).setStartFromEarliest() // TODO experiment with different start values
+  )
+val batch = benv.addSource(
+    new FlinkKafkaConsumer(
+      "tweets-raw-json",
+      serializer,
+      properties
+    ).setStartFromEarliest() // TODO experiment with different start values
+  )
+
+// how to take a single element from the stream?
+stenv.registerDataStream("tweets_json", stream, $"a")
+btenv.registerDataSet("tweets_json", batch)
+val tweetsRaw = tEnv.from("tweets_json")
+tweetsRaw.printSchema
+
+stream.print
+senv.execute("Kafka JSON example")
+
+```
+
 #### Confluent Schema registry interactive
 
 - let's add some more missing JARs:
 
 ```bash
-wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro-confluent-registry/1.10.1/flink-avro-confluent-registry-1.10.1.jar -P lib/
-wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro/1.10.1/flink-avro-1.10.1.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro-confluent-registry/1.11.0/flink-avro-confluent-registry-1.11.0.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro/1.11.0/flink-avro-1.11.0.jar -P lib/
 
-wget https://repo1.maven.org/maven2/org/apache/flink/force-shading/1.10.1/force-shading-1.10.1.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/force-shading/1.11.0/force-shading-1.11.0.jar -P lib/
 wget https://repo1.maven.org/maven2/org/apache/avro/avro/1.8.2/avro-1.8.2.jar -P lib/
 ```
 

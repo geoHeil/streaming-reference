@@ -248,7 +248,7 @@ services:
   #     - ./for_pulsar/pulsarconf:/pulsar/conf
   #   command: bin/pulsar standalone
   # jobmanager:
-  #   image: flink:1.10.1-scala_2.12
+  #   image: flink:1.11.0-scala_2.12
   #   expose:
   #     - "6123"
   #   ports:
@@ -258,7 +258,7 @@ services:
   #     - JOB_MANAGER_RPC_ADDRESS=jobmanager
 
   # taskmanager:
-  #   image: flink:1.10.1-scala_2.12
+  #   image: flink:1.11.10-scala_2.12
   #   expose:
   #     - "6121"
   #     - "6122"
