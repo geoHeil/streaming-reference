@@ -612,7 +612,13 @@ import org.apache.flink.table.api._
 import org.apache.flink.table.api.bridge.scala._
 
 
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+//import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper
+//import com.fasterxml.jackson.module.scala.DefaultScalaModule
+//import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.module.scala.DefaultScalaModule
+//val mapper = new ObjectMapper()
+//mapper.registerModule(DefaultScalaModule)
+//val texToMap = out.map(mapper.readValue(_,classOf[Map[Object,Object]])
+//println(textToJson)
 
 
 val serializer = new JSONKeyValueDeserializationSchema(false)
@@ -623,19 +629,22 @@ val stream = senv.addSource(
       properties
     ).setStartFromEarliest() // TODO experiment with different start values
   )
-val batch = benv.addSource(
-    new FlinkKafkaConsumer(
-      "tweets-raw-json",
-      serializer,
-      properties
-    ).setStartFromEarliest() // TODO experiment with different start values
-  )
+
+case class Foo(lang: String, count: Int)
+val r = stream
+    .map(e => {
+      Foo(e.get("value").get("lang").asText(), 1)
+    })
+    .keyBy(_.lang)
+    .timeWindow(Time.seconds(10))
+    .sum("count")
+r.print()
+stenv.registerDataStream("tweets_json", r)
 
 // how to take a single element from the stream?
-stenv.registerDataStream("tweets_json", stream, $"a")
-btenv.registerDataSet("tweets_json", batch)
-val tweetsRaw = tEnv.from("tweets_json")
-tweetsRaw.printSchema
+//stenv.registerDataStream("tweets_json", r)
+//val tweetsRaw = tEnv.from("tweets_json")
+//tweetsRaw.printSchema
 
 stream.print
 senv.execute("Kafka JSON example")
