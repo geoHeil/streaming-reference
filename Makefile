@@ -29,3 +29,9 @@ run-local-Tweets:
 # to run on yarn read
 # https://stackoverflow.com/questions/1322643/makefile-how-to-add-a-prefix-to-the-basename
 # and the linked Flink mailinglist discussion
+
+run-local-Anomaly:
+	./gradlew :usecases:anomaly:shadowJar
+	FLINK_ENV_JAVA_OPTS=-Dconfig.file="config/jobs/twitter-anomaly.conf" \
+	flink run --class com.github.geoheil.streamingreference.anomaly.TweetAnomaly \
+		"usecases/anomaly/build/libs/anomaly_${SCALA_VERSION}-${VERSION}-all.jar"

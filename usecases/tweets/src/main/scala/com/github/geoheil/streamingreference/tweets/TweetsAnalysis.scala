@@ -4,6 +4,7 @@ package com.github.geoheil.streamingreference.tweets
 import java.util.Properties
 
 import com.github.geoheil.streamingreference.{FlinkBaseJob, Tweet}
+import org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
 
 //import com.github.geoheil.streamingreference.common.FlinkBaseJob
 import org.apache.flink.api.common.serialization.SimpleStringSchema
@@ -108,6 +109,28 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
 //  stream.addSink(myProducer)
 
   //get the avro deserialize and serialize object
+  val serializer = new JSONKeyValueDeserializationSchema(false)
+  val stream = env.addSource(
+    new FlinkKafkaConsumer(
+      "tweets-raw-json",
+      serializer,
+      properties
+    ).setStartFromEarliest() // TODO experiment with different start values
+  )
+
+  //import scala.collection.JavaConversions._
+  case class Foo(lang: String, count: Int)
+  stream
+    .map(e => {
+      Foo(e.get("value").get("lang").asText(), 1)
+    })
+    .keyBy(_.lang)
+    .timeWindow(Time.seconds(10))
+    .sum("count")
+    .print()
+
+  null
+  /*
   val serializer = ConfluentRegistryAvroDeserializationSchema
     .forSpecific[Tweet](classOf[Tweet], schemaRegistryUrl)
   // TODO pre-key the tweets with lang directly from NiFi
@@ -121,7 +144,9 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
     ).setStartFromEarliest() // TODO experiment with different start values
   )
 
-  stream.print
+   */
+
+  //stream.print
 
   // using Avro & schema registry
 

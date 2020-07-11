@@ -8,3 +8,4 @@ for_nifi/conf/archive
 build
 .idea
 common/models/src/generated
+.ipynb_checkpoints

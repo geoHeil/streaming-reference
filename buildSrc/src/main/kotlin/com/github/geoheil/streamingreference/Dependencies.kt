@@ -18,6 +18,7 @@ object Libraries {
     private object Versions {
         //const val slf4jVersion = "" // 1.7.15 todo figure out which version to use
         const val pureconfigV = "0.12.3"
+        const val dataSketchesV = "1.3.0-incubating"
     }
 
     const val scalaLibrary = "org.scala-lang:scala-library:${SharedVersions.scalaV}"
@@ -27,7 +28,9 @@ object Libraries {
     const val flinkStreamingJava = "org.apache.flink:flink-streaming-java_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
     const val flinkStreamingScala = "org.apache.flink:flink-streaming-scala_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
     const val flinkTableApiScalaBridge = "org.apache.flink:flink-table-api-scala-bridge_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
+    const val flinkTwitterConnector = "org.apache.flink:flink-connector-twitter_${SharedVersions.scalaVBase}:${SharedVersions.flinkV}"
 
+    const val dataSketches = "org.apache.datasketches:datasketches-java:${Versions.dataSketchesV}"
 
     const val flinkAvro = "org.apache.flink:flink-avro:${SharedVersions.flinkV}"
     const val flinkAvroConfluentRegistry = "org.apache.flink:flink-avro-confluent-registry:${SharedVersions.flinkV}"

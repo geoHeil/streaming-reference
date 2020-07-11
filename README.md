@@ -639,6 +639,7 @@ val r = stream
     .timeWindow(Time.seconds(10))
     .sum("count")
 r.print()
+r.toDataSet( results, Row.class )
 stenv.registerDataStream("tweets_json", r)
 
 // how to take a single element from the stream?
@@ -653,6 +654,18 @@ senv.execute("Kafka JSON example")
 
 #### Confluent Schema registry interactive
 
+```
+# we need a custom unreleased bugfixed version of flink (master)
+# https://stackoverflow.com/questions/62637009/flink-avroruntimeexception-not-a-specific-class
+# 0.11.1 should already contain the fix (but this is not released for now)
+
+mvn clean
+having pulled again this morning to fce502cbc481e97b951259ac9350d0e401c68774
+corg.apache.flink:flink-dist_2.11:jar:1.12-SNAPSHOT:
+mvn clean package -DskipTests -Dfast -Dscala-2.11
+ Could not resolve dependencies for project org.apache.flink:flink-dist_2.11:jar:1.12-SNAPSHOT:
+```
+
 - let's add some more missing JARs:
 
 ```bash
@@ -661,6 +674,13 @@ wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro/1.11.0/flink-avr
 
 wget https://repo1.maven.org/maven2/org/apache/flink/force-shading/1.11.0/force-shading-1.11.0.jar -P lib/
 wget https://repo1.maven.org/maven2/org/apache/avro/avro/1.8.2/avro-1.8.2.jar -P lib/
+
+wget https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.11.1/jackson-core-2.11.1.jar -P lib/
+
+wget https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.11.1/jackson-databind-2.11.1.jar -P lib/
+wget https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.11.1/jackson-annotations-2.11.1.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/avro/avro/1.10.0/avro-1.10.0.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar -P lib/
 ```
 
 - now start the shell again
