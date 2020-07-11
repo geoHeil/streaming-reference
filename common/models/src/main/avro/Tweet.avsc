@@ -1,0 +1,155 @@
+{
+    "type": "record",
+    "name": "Tweet",
+    "namespace": "com.github.geoheil.streamingreference",
+    "doc": "Twitter tweet record limited to basic information",
+    "fields": [
+        {
+            "name": "tweet_id",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "System-assigned numeric tweet ID. Cannot be changed by the user."
+        },
+        {
+            "name": "text",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "the main text of a tweet"
+        },
+        {
+            "name": "source",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "user agent of tweet submitting device"
+        },
+        {
+            "name": "geo",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "geo if available"
+        },
+        {
+            "name": "place",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "place if available"
+        },
+        {
+            "name": "lang",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "language of the tweet"
+        },
+        {
+            "name": "created_at",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "created at timestamp string formatted"
+        },
+        {
+            "name": "timestamp_ms",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "created at timestamp epoch long formatted"
+        },
+        {
+            "name": "coordinates",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "coordinates if available"
+        },
+        {
+            "name": "user_id",
+            "type": [
+                "null",
+                "long"
+            ],
+            "doc": "System-assigned numeric tweet ID. Cannot be changed by the user."
+        },
+        {
+            "name": "user_name",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "speaking user name, can be changed"
+        },
+        {
+            "name": "screen_name",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "screen name, can be changed"
+        },
+        {
+            "name": "user_created_at",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "Timestamp of user creation"
+        },
+        {
+            "name": "followers_count",
+            "type": [
+                "null",
+                "long"
+            ],
+            "doc": "follower count"
+        },
+        {
+            "name": "friends_count",
+            "type": [
+                "null",
+                "long"
+            ],
+            "doc": "friends count"
+        },
+        {
+            "name": "user_lang",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "language of user profile"
+        },
+        {
+            "name": "user_location",
+            "type": [
+                "null",
+                "string"
+            ],
+            "doc": "location if available"
+        },
+        {
+            "name": "hashtags",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "string"
+                }
+            ],
+            "doc": "hashtags as list of strings if available"
+        }
+    ]
+}

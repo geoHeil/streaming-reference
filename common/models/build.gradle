@@ -3,11 +3,16 @@ plugins {
 }
 
 description = "avro models generated"
+
+dependencies{
+    compile "org.apache.avro:avro:1.8.2"
+}
 avrohugger {
     sourceDirectories = files("src/main/avro")
     destinationDirectory = file("src/generated/scala")
     typeMapping {
         protocolType = ScalaADT
     }
-    sourceFormat = Standard
+    //sourceFormat = Standard
+    sourceFormat = SpecificRecord
 }
