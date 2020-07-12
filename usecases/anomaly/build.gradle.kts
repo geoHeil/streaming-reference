@@ -9,6 +9,15 @@ dependencies {
     compileOnly(Libraries.flinkStreamingScala)
     compileOnly(Libraries.flinkTableApiScalaBridge)
 
+//    implementation(Libraries.log4jApi)
+//    implementation(Libraries.log4jCore)
+//    implementation(Libraries.log4jSlf4j)
+    implementation(Libraries.commonsLogging)
+    implementation(Libraries.json4sCore)
+    implementation(Libraries.json4sNative)
+//    implementation(Libraries.json4sJackson)
+//    implementation(Libraries.jacksonScalaModule)
+
     implementation(project(":common"))
     implementation(project(":common:models"))
 

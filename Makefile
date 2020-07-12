@@ -7,7 +7,9 @@ version:
 # NOTE: you need to have a running flink cluster up first
 # i.e. on a mac with homebrew
 # cd /usr/local/Cellar/apache-flink/1.10.1/libexec
+# flink binary must be on the path, as well as its bin folder! Then:
 # ./bin/start-cluster.sh
+
 run-local-Socket:
 	./gradlew :usecases:streamingWordcount:shadowJar
 	flink run --class com.github.geoheil.streamingreference.streamingwc.StreamingWordCount \

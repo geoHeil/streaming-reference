@@ -129,7 +129,7 @@ object TweetsAnalysis extends FlinkBaseJob[TweetsAnalysisConfiguration] {
     .sum("count")
     .print()
 
-  null
+//  null
   /*
   val serializer = ConfluentRegistryAvroDeserializationSchema
     .forSpecific[Tweet](classOf[Tweet], schemaRegistryUrl)
