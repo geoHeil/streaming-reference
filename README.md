@@ -159,28 +159,22 @@ GET avro-bitstamp*/_mapping
 If not cleaned up below can be used to fix the data types directly in Elastic:
 
 ```
+# lösche sicherheitshalber alles weg, damit wir sauber von vorne machen können
+DELETE bits*
+
+# erstelle ein template – bits_template
 PUT _template/bits_template
 {
   "index_patterns": "bits*",
   "order": 1,
   "mappings": {
-     "properties": {
-      "reindexBatch": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword",
-            "ignore_above": 256
-          }
-        }
-      },
+    "properties": {
       "last": {
         "type": "float"
       },
       "timestamp": {
         "type": "date",
-        "format":
-          "epoch_second"
+        "format": "epoch_second"
       },
       "volume": {
         "type": "float"
@@ -188,21 +182,37 @@ PUT _template/bits_template
     }
   }
 }
-
-# template only applied to new ones - delete old ones
-DELETE bits*
-
-# alternatively reindex
-POST _reindex
-{
-  "source": {
-    "index": "twitter"
-  },
-  "dest": {
-    "index": "new_twitter"
-  }
-}
 ```
+
+- create a new index template at: http://localhost:5601/app/kibana#/management/kibana/index_pattern?_g=() for `bits*`
+- select timestamp as time filter
+- create a first visualization in Kibana
+
+Now, move to the next example, this time `fixed-bitstamp`, the tweets are already pre-processed inside NiFi such as less fixup in the Elstic template is required.
+
+```
+DELETE fixed*
+
+# default date detection should already work. 
+# https://www.elastic.co/guide/en/elasticsearch/reference/6.8/dynamic-field-mapping.html
+```
+
+Now as a last step, let's read the avro based data from NiFi (more fields to plot: 
+
+```
+DELETE avro*
+
+# indices needs to be adapted
+# beim avro muss das timestamp angepasst werden wie beim bitstamp – diesmal machen wir es über Kibana bei Managment -> Elasticsearch Index Management
+
+# erstelle ein neues Index Template http://localhost:5601/app/kibana#/management/elasticsearch/index_management/create_template
+# avro-template, avro*, 1,1
+# erstellen das Mapping 
+# revisit the timestamp to set the right epoch second in the option details
+```
+
+remember to always cleanup using delete first to also delete any invalid template mappings.
+This deletes the data as well.
 
 #### Cleaning up in Elastic
 
@@ -465,9 +475,9 @@ rest.port: 8089
 - download the kafka jar additional JAR (https://stackoverflow.com/questions/55098192/read-from-kafka-into-flink-scala-shell):
 
 ```bash
-wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka_2.11/1.11.0/flink-connector-kafka_2.11-1.11.0.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka_2.11/1.11.1/flink-connector-kafka_2.11-1.11.1.jar -P lib/
 
-wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka-base_2.11/1.11.0/flink-connector-kafka-base_2.11-1.11.0.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka-base_2.11/1.11.1/flink-connector-kafka-base_2.11-1.11.1.jar -P lib/
 
 wget https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/0.10.2.1/kafka-clients-0.10.2.1.jar -P lib/
 ```
@@ -669,17 +679,17 @@ mvn clean package -DskipTests -Dfast -Dscala-2.11
 - let's add some more missing JARs:
 
 ```bash
-wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro-confluent-registry/1.11.0/flink-avro-confluent-registry-1.11.0.jar -P lib/
-wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro/1.11.0/flink-avro-1.11.0.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro-confluent-registry/1.11.1/flink-avro-confluent-registry-1.11.1.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-avro/1.11.1/flink-avro-1.11.1.jar -P lib/
 
-wget https://repo1.maven.org/maven2/org/apache/flink/force-shading/1.11.0/force-shading-1.11.0.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/flink/force-shading/1.11.1/force-shading-1.11.1.jar -P lib/
 wget https://repo1.maven.org/maven2/org/apache/avro/avro/1.8.2/avro-1.8.2.jar -P lib/
 
 wget https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.11.1/jackson-core-2.11.1.jar -P lib/
 
 wget https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.11.1/jackson-databind-2.11.1.jar -P lib/
 wget https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.11.1/jackson-annotations-2.11.1.jar -P lib/
-wget https://repo1.maven.org/maven2/org/apache/avro/avro/1.10.0/avro-1.10.0.jar -P lib/
+wget https://repo1.maven.org/maven2/org/apache/avro/avro/1.11.1/avro-1.11.1.jar -P lib/
 wget https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar -P lib/
 ```
 
@@ -690,6 +700,7 @@ export TERM=xterm-color
 ./bin/start-scala-shell.sh local
 ```
 
+It is important to use a version of flink where https://issues.apache.org/jira/browse/FLINK-18478 is already patched i.e. 1.11.1 or later.
 - and execute
 
 ```scala
@@ -708,6 +719,10 @@ val properties = new Properties()
 properties.setProperty("bootstrap.servers", "localhost:9092")
 properties.setProperty("group.id", "test")
 val schemaRegistryUrl = "http://localhost:8081"
+
+// https://stackoverflow.com/questions/58849635/is-it-possible-to-deserialize-avro-messageconsuming-message-from-kafka-without
+// val serializer = ConfluentRegistryAvroDeserializationSchema.forGeneric("tweets-raw-value", schemaRegistryUrl)
+
 val serializer = ConfluentRegistryAvroDeserializationSchema.forSpecific[Tweet](classOf[Tweet], schemaRegistryUrl)
 
 val stream = senv.addSource(
