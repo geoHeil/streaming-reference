@@ -906,4 +906,4 @@ Or simply other ideas for nice data to stream in this pipeline:
 - https://www.youtube.com/watch?v=gR2vGKiDrqo&t=2196s
 - https://github.com/BrooksIan/Flink2Kafka
 
- 
+
